@@ -1,0 +1,118 @@
+// ═══════════════════════════════════════════════════
+// Escolar AI - Database Schema
+// ═══════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════
+// PAI / RESPONSÁVEL
+// ═══════════════════════════════════════════════════
+
+model Parent {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  phone         String?
+  passwordHash  String?           // nullable para Google OAuth only
+  googleId      String?  @unique
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  children     Child[]
+  sessions     Session[]
+}
+
+// ═══════════════════════════════════════════════════
+// FILHO / CRIANÇA
+// ═══════════════════════════════════════════════════
+
+model Child {
+  id           String   @id @default(cuid())
+  parentId     String
+  name         String
+  nickname     String   @unique // login
+  passwordHash String          // bcrypt
+  email        String?  @unique // opcional
+  age          Int
+  grade        String?         // ex: "5º ano"
+  school       String?         // nome da escola
+  city         String?
+  state        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  parent        Parent       @relation(fields: [parentId], references: [id])
+  sessions      Session[]
+  conversations Conversation[]
+
+  @@index([parentId])
+  @@index([nickname])
+}
+
+// ═══════════════════════════════════════════════════
+// SESSÃO / TOKEN
+// ═══════════════════════════════════════════════════
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  userType     String          // "parent" ou "child"
+  token        String   @unique
+  refreshToken String?  @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  revokedAt    DateTime?
+
+  parent       Parent?  @relation(fields: [parentId], references: [id])
+  parentId     String?
+  child        Child?   @relation(fields: [childId], references: [id])
+  childId      String?
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ═══════════════════════════════════════════════════
+// CONVERSA (histórico de perguntas)
+// ═══════════════════════════════════════════════════
+
+model Conversation {
+  id        String   @id @default(cuid())
+  childId   String
+  input     String
+  output    String?
+  status    String          // "approved" | "blocked"
+  blockReason String?
+  guardRail Json?           // JSON com layers que passaram
+  model     String?         // modelo usado (ex: "xiaomi/mimo-v2-omni")
+  tokens    Int?            // tokens consumidos
+  createdAt DateTime @default(now())
+
+  child Child @relation(fields: [childId], references: [id])
+
+  @@index([childId])
+  @@index([createdAt])
+}
+
+// ═══════════════════════════════════════════════════
+// PALAVRAS BLOQUEADAS (configurável pelo pai)
+// ═══════════════════════════════════════════════════
+
+model BlockedKeyword {
+  id       String @id @default(cuid())
+  keyword  String
+  category String  // "violence", "sexual", "drugs", "out_of_context"
+  severity String  // "critical", "high", "medium", "low"
+  active   Boolean @default(true)
+
+  @@unique([keyword])
+}
