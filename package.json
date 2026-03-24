@@ -8,7 +8,7 @@
     "dev": "node --watch src/web/server.js",
     "start": "node src/web/server.js",
     "web": "node src/web/server.js",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
