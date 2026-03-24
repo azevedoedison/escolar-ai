@@ -29,7 +29,7 @@ const guardrails = new GuardRailsEngine();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(join(__dirname)));
+app.use(express.static(join(__dirname, 'public')));
 
 // ═══════════════════════════════════════════════════
 // API Routes
@@ -116,9 +116,24 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'escolar-ai-web' });
 });
 
-// Serve index.html para todas as outras rotas
+// History page
+app.get('/history', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'history.html'));
+});
+
+// Dashboard (login de pai)
+app.get('/dashboard', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'dashboard.html'));
+});
+
+// Serve index.html para chat
+app.get('/', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'index.html'));
+});
+
+// Serve index.html para todas as outras rotas (chat)
 app.get('*', (req, res) => {
-  res.sendFile(join(__dirname, 'index.html'));
+  res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
