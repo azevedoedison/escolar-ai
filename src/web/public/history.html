@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escolar AI - Histórico</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #333;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .back-btn {
+      background: #333;
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .back-btn:hover { background: #444; }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: #2a2a2a;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .stat-card.green .value { color: #4caf50; }
+    .stat-card.red .value { color: #f44336; }
+    .stat-card.blue .value { color: #2196f3; }
+    .stat-card.orange .value { color: #ff9800; }
+
+    /* Filters */
+    .filters {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filters select,
+    .filters input {
+      background: #2a2a2a;
+      border: 1px solid #333;
+      color: #fff;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .filters input { flex: 1; min-width: 200px; }
+    .filters select { min-width: 150px; }
+
+    .btn {
+      background: #4caf50;
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn:hover { background: #45a049; }
+    .btn-outline { background: transparent; border: 1px solid #4caf50; }
+
+    /* Timeline */
+    .timeline-group {
+      margin-bottom: 30px;
+    }
+
+    .timeline-date {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #333;
+    }
+
+    .conversation-item {
+      background: #2a2a2a;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .conversation-item:hover { background: #333; }
+
+    .conversation-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .conversation-time {
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .conversation-status {
+      font-size: 1.2rem;
+    }
+
+    .conversation-preview {
+      font-size: 0.95rem;
+      color: #ccc;
+    }
+
+    .conversation-preview.blocked {
+      color: #f44336;
+      font-style: italic;
+    }
+
+    .block-reason {
+      display: inline-block;
+      background: #f4433622;
+      color: #f44336;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-left: 10px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: #2a2a2a;
+      border-radius: 16px;
+      padding: 25px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-section {
+      margin-bottom: 20px;
+    }
+
+    .modal-section h3 {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .modal-section p {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+
+    .modal-section p.answer {
+      color: #4caf50;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .empty-state .emoji { font-size: 3rem; margin-bottom: 15px; }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .filters { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📚 Histórico de Conversas</h1>
+      <button class="back-btn" onclick="window.location.href='/'">← Voltar</button>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card blue">
+        <div class="value" id="stat-total">-</div>
+        <div class="label">💬 Total</div>
+      </div>
+      <div class="stat-card green">
+        <div class="value" id="stat-approved">-</div>
+        <div class="label">✅ Aprovadas</div>
+      </div>
+      <div class="stat-card red">
+        <div class="value" id="stat-blocked">-</div>
+        <div class="label">🛡️ Bloqueadas</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="value" id="stat-time">-</div>
+        <div class="label">⏱️ Tempo</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <select id="filter-period">
+        <option value="7">Últimos 7 dias</option>
+        <option value="30">Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="custom">Personalizado</option>
+      </select>
+      <select id="filter-status">
+        <option value="">Todos</option>
+        <option value="approved">Aprovados</option>
+        <option value="blocked">Bloqueados</option>
+      </select>
+      <input type="text" id="filter-search" placeholder="Buscar na pergunta...">
+      <button class="btn btn-outline" onclick="exportCSV()">📥 Exportar CSV</button>
+    </div>
+
+    <!-- Timeline -->
+    <div id="timeline">
+      <div class="loading">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Modal de Detalhes -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>💬 Detalhes da Conversa</h2>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-section">
+        <h3>📅 Data/Hora</h3>
+        <p id="modal-datetime">-</p>
+      </div>
+      <div class="modal-section">
+        <h3>❓ Pergunta</h3>
+        <p id="modal-question">-</p>
+      </div>
+      <div class="modal-section">
+        <h3>💬 Resposta</h3>
+        <p id="modal-answer" class="answer">-</p>
+      </div>
+      <div class="modal-section" id="modal-blocked-section" style="display:none">
+        <h3>🛡️ Motivo do Bloqueio</h3>
+        <p id="modal-reason" style="color:#f44336">-</p>
+      </div>
+      <div class="modal-section">
+        <h3>ℹ️ Informações</h3>
+        <p id="modal-info">-</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      formatDate,
+      formatTime,
+      formatRelativeTime,
+      statusIcon,
+      truncateText,
+      buildQueryString,
+      debounce,
+      groupByDate,
+      calculateStats,
+      exportToCSV
+    } from './history.js';
+
+    // Expor funções para uso global (onclick)
+    window.formatDate = formatDate;
+    window.formatTime = formatTime;
+    window.statusIcon = statusIcon;
+    window.truncateText = truncateText;
+
+    let conversations = [];
+    let currentChildId = null;
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      currentChildId = params.get('childId');
+      
+      if (!currentChildId) {
+        showEmptyState('Selecione uma criança no dashboard');
+        return;
+      }
+
+      loadConversations();
+
+      // Event listeners
+      document.getElementById('filter-period').addEventListener('change', loadConversations);
+      document.getElementById('filter-status').addEventListener('change', loadConversations);
+      document.getElementById('filter-search').addEventListener('input', debounce(loadConversations, 300));
+    });
+
+    async function loadConversations() {
+      const period = document.getElementById('filter-period').value;
+      const status = document.getElementById('filter-status').value;
+      const search = document.getElementById('filter-search').value;
+
+      try {
+        const query = buildQueryString({
+          days: period,
+          status: status,
+          search: search,
+        });
+
+        const url = `/api/conversations/${currentChildId}${query ? '?' + query : ''}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        conversations = data.conversations || [];
+        renderTimeline(conversations);
+        updateStats(conversations);
+      } catch (error) {
+        console.error('Erro ao carregar:', error);
+        showEmptyState('Erro ao carregar conversas');
+      }
+    }
+
+    function renderTimeline(convs) {
+      const container = document.getElementById('timeline');
+
+      if (!convs || convs.length === 0) {
+        showEmptyState('Nenhuma conversa encontrada');
+        return;
+      }
+
+      const grouped = groupByDate(convs);
+      let html = '';
+
+      for (const [date, items] of Object.entries(grouped)) {
+        html += `
+          <div class="timeline-group">
+            <div class="timeline-date">📅 ${date}</div>
+            ${items.map(conv => `
+              <div class="conversation-item" onclick="openModal('${conv.id}')">
+                <div class="conversation-header">
+                  <span class="conversation-status">${statusIcon(conv.status)}</span>
+                  <span class="conversation-time">${formatTime(conv.createdAt)}</span>
+                  ${conv.blockReason ? `<span class="block-reason">${conv.blockReason}</span>` : ''}
+                </div>
+                <div class="conversation-preview ${conv.status === 'blocked' ? 'blocked' : ''}">
+                  ${truncateText(conv.input, 80)}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function updateStats(convs) {
+      const stats = calculateStats(convs);
+      
+      document.getElementById('stat-total').textContent = stats.total;
+      document.getElementById('stat-approved').textContent = stats.approved;
+      document.getElementById('stat-blocked').textContent = stats.blocked;
+      document.getElementById('stat-time').textContent = formatTimeFromTokens(stats.totalTokens);
+    }
+
+    function formatTimeFromTokens(tokens) {
+      if (!tokens) return '0s';
+      const seconds = Math.round(tokens * 0.5);
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      
+      if (hours > 0) return `${hours}h ${minutes}min`;
+      if (minutes > 0) return `${minutes}min`;
+      return `${seconds}s`;
+    }
+
+    function showEmptyState(message) {
+      document.getElementById('timeline').innerHTML = `
+        <div class="empty-state">
+          <div class="emoji">📭</div>
+          <p>${message}</p>
+        </div>
+      `;
+    }
+
+    // Modal
+    window.openModal = function(convId) {
+      const conv = conversations.find(c => c.id === convId);
+      if (!conv) return;
+
+      document.getElementById('modal-datetime').textContent = 
+        `${formatDate(conv.createdAt)} às ${formatTime(conv.createdAt)}`;
+      document.getElementById('modal-question').textContent = conv.input || '-';
+      document.getElementById('modal-answer').textContent = conv.output || 'N/A';
+      
+      const blockedSection = document.getElementById('modal-blocked-section');
+      if (conv.status === 'blocked') {
+        blockedSection.style.display = 'block';
+        document.getElementById('modal-reason').textContent = conv.blockReason || 'Conteúdo inadequado';
+      } else {
+        blockedSection.style.display = 'none';
+      }
+
+      document.getElementById('modal-info').innerHTML = `
+        Status: ${statusIcon(conv.status)} ${conv.status}<br>
+        Modelo: ${conv.model || 'N/A'}<br>
+        ID: ${conv.id}
+      `;
+
+      document.getElementById('modal').classList.add('active');
+    };
+
+    window.closeModal = function() {
+      document.getElementById('modal').classList.remove('active');
+    };
+
+    // Fechar modal ao clicar fora
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.id === 'modal') closeModal();
+    });
+
+    // Export CSV
+    window.exportCSV = function() {
+      const csv = exportToCSV(conversations);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `historico-${formatDate(new Date()).replace(/\//g, '-')}.csv`;
+      link.click();
+    };
+  </script>
+</body>
+</html>
