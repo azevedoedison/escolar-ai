@@ -167,7 +167,83 @@ Authorization: Bearer <parent-token>
 
 ---
 
-## 4. Modelos de Dados
+## 4. Dashboard Web - Histórico de Conversas
+
+### RF-DASH-001: Acesso ao Histórico
+- **DADO** que o pai está logado no dashboard
+- **QUANDO** clica em "Histórico" de um filho
+- **ENTÃO** vê lista de todas as conversas
+- **E** pode filtrar por período e status
+
+### RF-DASH-002: Visualização de Conversa
+- **DADO** que o pai vê a lista de conversas
+- **QUANDO** clica em uma conversa
+- **ENTÃO** vê pergunta completa + resposta
+- **E** data/hora, modelo usado, status (aprovado/bloqueado)
+
+### RF-DASH-003: Filtros Avançados
+| Filtro | Opções |
+|--------|--------|
+| Período | Hoje, 7 dias, 30 dias, Personalizado |
+| Status | Todos, Aprovados, Bloqueados |
+| Busca | Texto na pergunta (debounce 300ms) |
+
+### RF-DASH-004: Timeline Visual
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 📅 Março 2024                                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ 24 ─────────────────────────────────────────────────────── │
+│  │  🟢 09:15  "O que é fotossíntese?"                      │
+│  │  🟢 09:18  "Como funciona a água?"                      │
+│  │  🟢 10:02  "Qual a capital do Brasil?"                  │
+│  │  🔴 14:32  "maconha vibe" [🚫 DROGAS]                   │
+│  │  🟢 14:35  "O que é DNA?"                               │
+│                                                             │
+│ 23 ─────────────────────────────────────────────────────── │
+│  │  🟢 08:45  "Área do triângulo"                          │
+│  │  🟢 09:00  "Quem foi Tiradentes?"                       │
+│  │  🔴 11:20  "filme de terror" [🚫 FORA DE CONTEXTO]      │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+🟢 = Aprovado  |  🔴 = Bloqueado
+```
+
+### RF-DASH-005: Exportação
+- **DADO** que o pai quer baixar o histórico
+- **QUANDO** clica em "Exportar CSV"
+- **ENTÃO** baixa arquivo com todas as conversas do período
+- **E** colunas: data, hora, pergunta, resposta, status, motivo_bloqueio
+
+### RF-DASH-006: Estatísticas em Tempo Real
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 📊 Estatísticas - Maria (últimos 7 dias)                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  💬 23 perguntas    │  🛡️ 2 bloqueados    │  ⏱️ 1h 45min  │
+│  (↑15% vs anterior) │  (8% do total)      │  de uso        │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  📚 Assuntos mais perguntados:                             │
+│  ████████████████████░░░░░░░░  Ciências (45%)              │
+│  ██████████████░░░░░░░░░░░░░░  Matemática (30%)            │
+│  ██████████░░░░░░░░░░░░░░░░░░  História (25%)              │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### RF-DASH-007: Alertas Visuais
+- Badge vermelha no header quando há alertas não lidos
+- Lista de alertas na sidebar
+- Modal de detalhes ao clicar no alerta
+
+---
+
+## 5. Modelos de Dados
 
 ### Alert (novo)
 ```prisma
@@ -191,7 +267,7 @@ model Alert {
 
 ---
 
-## 5. Regras de Negócio
+## 6. Regras de Negócio
 
 | Regra | Descrição |
 |-------|-----------|

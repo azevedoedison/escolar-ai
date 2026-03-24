@@ -118,6 +118,63 @@
 
 ---
 
+### Tarefa 007: Dashboard Web - Histórico
+| Campo | Valor |
+|-------|-------|
+| **ID** | T-007 |
+| **Spec Ref** | functional.md §4 |
+| **Prioridade** | 🔴 Critical |
+| **Estimativa** | 4 horas |
+| **Depende de** | T-005 |
+
+**Checklist:**
+- [ ] Criar `src/web/public/dashboard.html`
+- [ ] Criar `src/web/public/history.js` (frontend)
+- [ ] Timeline visual das conversas (🟢/🔴 por status)
+- [ ] Filtros: período, status, busca (debounce 300ms)
+- [ ] Modal de detalhes da conversa
+- [ ] Estatísticas em tempo real (cards)
+- [ ] Exportar CSV
+- [ ] Estilo dark theme (ChatGPT-style)
+
+---
+
+### Tarefa 008: Dashboard API Extras
+| Campo | Valor |
+|-------|-------|
+| **ID** | T-008 |
+| **Spec Ref** | functional.md §4.5 |
+| **Prioridade** | 🟡 High |
+| **Estimativa** | 2 horas |
+| **Depende de** | T-005 |
+
+**Checklist:**
+- [ ] Implementar `GET /api/conversations/:childId/export` (CSV)
+- [ ] Implementar busca por texto (query param `search`)
+- [ ] Implementar paginação (`page`, `limit`)
+- [ ] Implementar `GET /api/alerts/:parentId/unread`
+- [ ] Escrever testes
+
+---
+
+### Tarefa 009: Alertas UI
+| Campo | Valor |
+|-------|-------|
+| **ID** | T-009 |
+| **Spec Ref** | functional.md §4.7 |
+| **Prioridade** | 🟡 High |
+| **Estimativa** | 2 horas |
+| **Depende de** | T-007, T-002 |
+
+**Checklist:**
+- [ ] Badge de alertas não lidos no header
+- [ ] Lista de alertas na sidebar
+- [ ] Modal de detalhes do alerta
+- [ ] Marcar como lido
+- [ ] Notificação sonora (opcional)
+
+---
+
 ## 📊 Resumo
 
 | Tarefa | Estimativa | Prioridade |
@@ -128,7 +185,10 @@
 | T-004 Topic Extraction | 1h | 🟡 High |
 | T-005 Report API | 2h | 🟡 High |
 | T-006 Cron Job | 1h | 🔴 Critical |
-| **TOTAL** | **11h** | ~2 dias |
+| T-007 Dashboard Web | 4h | 🔴 Critical |
+| T-008 Dashboard API | 2h | 🟡 High |
+| T-009 Alertas UI | 2h | 🟡 High |
+| **TOTAL** | **19h** | ~3 dias |
 
 ---
 
@@ -138,5 +198,8 @@
 2. **T-004** Topic Extraction (testes → código)
 3. **T-002** AlertDetector (testes → código)
 4. **T-005** Report API (testes → código)
-5. **T-003** EmailSender (testes → código)
-6. **T-006** Cron Job (integração)
+5. **T-008** Dashboard API Extras (testes → código)
+6. **T-007** Dashboard Web (HTML/JS)
+7. **T-009** Alertas UI
+8. **T-003** EmailSender (testes → código)
+9. **T-006** Cron Job (integração)
