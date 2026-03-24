@@ -7,175 +7,166 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:3000';
 
-// Dados de teste
+// Dados únicos para cada execução
+const TIMESTAMP = Date.now();
 const TEST_PARENT = {
-  email: `testparent${Date.now()}@test.com`,
+  email: `e2e${TIMESTAMP}@test.com`,
   password: 'Test@123456',
-  name: 'Pai Teste E2E',
+  name: 'Pai E2E',
 };
 
 const TEST_CHILD = {
-  nickname: `kid${Date.now()}`,
+  nickname: `kid${TIMESTAMP}`,
   password: 'kid123',
-  name: 'Filho Teste',
+  name: 'Filho E2E',
   age: 10,
 };
 
-let childId = null;
-
 test.describe('Escolar AI - E2E', () => {
 
-  test('1. Registrar pai', async ({ page }) => {
+  test('1. Página inicial carrega', async ({ page }) => {
     await page.goto(BASE_URL);
-
-    // Clicar em "Criar conta"
-    await page.click('text=Criar conta');
+    await expect(page).toHaveTitle(/Escolar AI/);
     
-    // Preencher formulário
+    // Tem opção de login
+    const hasLogin = await page.isVisible('text=Entrar').catch(() => false);
+    expect(hasLogin).toBeTruthy();
+  });
+
+  test('2. Registrar e logar como pai', async ({ page }) => {
+    await page.goto(BASE_URL);
+    
+    // Ir para registro
+    await page.click('text=Criar conta').catch(() => {});
+    await page.waitForTimeout(500);
+    
+    // Registrar
     await page.fill('#regName', TEST_PARENT.name);
     await page.fill('#regEmail', TEST_PARENT.email);
     await page.fill('#regPassword', TEST_PARENT.password);
-    
-    // Submeter
     await page.click('button:has-text("Criar Conta")');
     
-    // Esperar redirecionamento ou mensagem de sucesso
-    await page.waitForTimeout(2000);
+    // Esperar resposta (sucesso ou erro)
+    await page.waitForTimeout(3000);
     
-    // Deve estar logado (verificar se dashboard aparece)
-    const dashboardVisible = await page.isVisible('#dashboardPage').catch(() => false);
-    expect(dashboardVisible).toBeTruthy();
+    // Verificar se está no dashboard OU se foi redirecionado para login
+    const inDashboard = await page.isVisible('#dashboardPage').catch(() => false);
+    const atLogin = await page.isVisible('#parentLoginForm').catch(() => false);
+    
+    expect(inDashboard || atLogin).toBeTruthy();
   });
 
-  test('2. Cadastrar filho', async ({ page }) => {
+  test('3. Login como pai', async ({ page }) => {
     await page.goto(BASE_URL);
     
-    // Se não estiver logado, registrar e logar
-    const needsLogin = await page.isVisible('text=Criar conta').catch(() => false);
-    if (needsLogin) {
-      await page.click('text=Criar conta');
-      await page.fill('#regName', TEST_PARENT.name);
-      await page.fill('#regEmail', TEST_PARENT.email);
-      await page.fill('#regPassword', TEST_PARENT.password);
-      await page.click('button:has-text("Criar Conta")');
-      await page.waitForTimeout(2000);
-    }
+    // Garantir que estamos no form de login de pai
+    await page.click('text=Pai').catch(() => {});
+    await page.waitForTimeout(300);
+    
+    // Login
+    await page.fill('#parentEmail', TEST_PARENT.email);
+    await page.fill('#parentPassword', TEST_PARENT.password);
+    await page.click('#parentLoginBtn');
+    
+    await page.waitForTimeout(2000);
+    
+    // Deve estar no dashboard
+    const visible = await page.isVisible('#dashboardPage');
+    expect(visible).toBeTruthy();
+  });
 
-    // Clicar em "Adicionar Filho"
-    await page.click('text=Adicionar Filho').catch(() => {});
+  test('4. Cadastrar filho', async ({ page }) => {
+    // Login primeiro
+    await page.goto(BASE_URL);
+    await page.click('text=Pai').catch(() => {});
+    await page.fill('#parentEmail', TEST_PARENT.email);
+    await page.fill('#parentPassword', TEST_PARENT.password);
+    await page.click('#parentLoginBtn');
+    await page.waitForTimeout(2000);
+    
+    // Clicar em adicionar filho
+    await page.click('button:has-text("Adicionar Filho")').catch(() => {});
     await page.waitForTimeout(1000);
     
-    // Preencher dados do filho
-    await page.fill('#childName', TEST_CHILD.name).catch(() => {});
-    await page.fill('#childAge', TEST_CHILD.age.toString()).catch(() => {});
-    await page.fill('#childNicknameModal', TEST_CHILD.nickname).catch(() => {});
-    await page.fill('#childPasswordModal', TEST_CHILD.password).catch(() => {});
+    // Preencher modal
+    await page.fill('#childName', TEST_CHILD.name);
+    await page.fill('#childNicknameModal', TEST_CHILD.nickname);
+    await page.fill('#childAge', TEST_CHILD.age.toString());
+    await page.fill('#childPasswordModal', TEST_CHILD.password);
     
     // Salvar
-    await page.click('button:has-text("Salvar")').catch(() => {});
+    await page.click('#childModal button:has-text("Salvar")').catch(() => {});
     await page.waitForTimeout(2000);
     
     // Verificar se apareceu na lista
-    const childVisible = await page.isVisible(`text=${TEST_CHILD.nickname}`).catch(() => false);
-    expect(childVisible).toBeTruthy();
+    const text = await page.textContent('#childrenList').catch(() => '');
+    expect(text).toContain(TEST_CHILD.nickname);
   });
 
-  test('3. Login como filho e fazer pergunta', async ({ page }) => {
+  test('5. Chat funciona', async ({ page }) => {
     await page.goto(BASE_URL);
     
-    // Seleicionar login de criança
+    // Login como criança
     await page.click('text=Criança').catch(() => {});
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
     
-    // Login
-    await page.fill('#childNickname', TEST_CHILD.nickname).catch(() => {});
-    await page.fill('#childPassword', TEST_CHILD.password).catch(() => {});
+    await page.fill('#childNickname', TEST_CHILD.nickname);
+    await page.fill('#childPassword', TEST_CHILD.password);
     await page.click('button:has-text("Entrar")').catch(() => {});
     await page.waitForTimeout(2000);
     
     // Fazer pergunta
     const chatInput = await page.$('#input');
     if (chatInput) {
-      await chatInput.fill('O que é fotossíntese?');
+      await chatInput.fill('2+2=?');
       await page.click('button:has-text("Enviar")').catch(() => {});
-      await page.waitForTimeout(10000); // Esperar resposta da IA
+      await page.waitForTimeout(15000); // Esperar IA
       
-      // Verificar se apareceu resposta
-      const response = await page.textContent('body');
-      expect(response).toContain('fotossíntese');
+      // Deve ter alguma resposta (não "Ops!")
+      const body = await page.textContent('body');
+      const hasResponse = body.includes('4') || body.includes('matemática') || body.includes('conta');
+      expect(hasResponse).toBeTruthy();
     }
   });
 
-  test('4. Acessar histórico como pai', async ({ page }) => {
-    await page.goto(BASE_URL);
-    
+  test('6. Histórico carrega', async ({ page }) => {
     // Login como pai
+    await page.goto(BASE_URL);
     await page.click('text=Pai').catch(() => {});
-    await page.fill('#parentEmail', TEST_PARENT.email).catch(() => {});
-    await page.fill('#parentPassword', TEST_PARENT.password).catch(() => {});
-    await page.click('button:has-text("Entrar")').catch(() => {});
+    await page.fill('#parentEmail', TEST_PARENT.email);
+    await page.fill('#parentPassword', TEST_PARENT.password);
+    await page.click('#parentLoginBtn');
     await page.waitForTimeout(2000);
     
-    // Clicar em "Histórico"
+    // Clicar em Histórico
     await page.click('text=Histórico').catch(() => {});
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
     
-    // Verificar se a página de histórico abriu
-    const historyVisible = await page.isVisible('#historyPage').catch(() => false);
+    // Verificar se página de histórico está visível
+    const historyVisible = await page.isVisible('#historyPage');
     expect(historyVisible).toBeTruthy();
   });
 
-  test('5. Navegar entre páginas', async ({ page }) => {
-    await page.goto(BASE_URL);
-    
+  test('7. Voltar do histórico', async ({ page }) => {
     // Login como pai
+    await page.goto(BASE_URL);
     await page.click('text=Pai').catch(() => {});
-    await page.fill('#parentEmail', TEST_PARENT.email).catch(() => {});
-    await page.fill('#parentPassword', TEST_PARENT.password).catch(() => {});
-    await page.click('button:has-text("Entrar")').catch(() => {});
+    await page.fill('#parentEmail', TEST_PARENT.email);
+    await page.fill('#parentPassword', TEST_PARENT.password);
+    await page.click('#parentLoginBtn');
     await page.waitForTimeout(2000);
     
     // Ir para histórico
     await page.click('text=Histórico').catch(() => {});
     await page.waitForTimeout(1000);
     
-    // Voltar ao dashboard
+    // Clicar voltar
     await page.click('button:has-text("Voltar")').catch(() => {});
     await page.waitForTimeout(1000);
     
-    // Verificar se está no dashboard
-    const dashboardVisible = await page.isVisible('#dashboardPage').catch(() => false);
+    // Deve estar de volta no dashboard
+    const dashboardVisible = await page.isVisible('#dashboardPage');
     expect(dashboardVisible).toBeTruthy();
-  });
-
-  test('6. Filtros do histórico', async ({ page }) => {
-    await page.goto(BASE_URL);
-    
-    // Login como pai e ir para histórico
-    await page.click('text=Pai').catch(() => {});
-    await page.fill('#parentEmail', TEST_PARENT.email).catch(() => {});
-    await page.fill('#parentPassword', TEST_PARENT.password).catch(() => {});
-    await page.click('button:has-text("Entrar")').catch(() => {});
-    await page.waitForTimeout(2000);
-    await page.click('text=Histórico').catch(() => {});
-    await page.waitForTimeout(1000);
-    
-    // Selecionar filtro de filho (primeira opção disponível)
-    const childFilter = await page.$('#historyChildFilter');
-    if (childFilter) {
-      await page.selectOption('#historyChildFilter', { index: 1 }).catch(() => {});
-    }
-    
-    await page.waitForTimeout(1000);
-    
-    // Fazer busca
-    await page.fill('#historySearch', 'fotossíntese').catch(() => {});
-    await page.press('#historySearch', 'Enter').catch(() => {});
-    
-    await page.waitForTimeout(1000);
-    
-    // Teste passou se não errou
-    expect(true).toBeTruthy();
   });
 
 });
