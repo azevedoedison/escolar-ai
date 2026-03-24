@@ -396,6 +396,24 @@
       </div>
     </div>
 
+    <!-- Modal Login Filho (para botão Conversar do Dashboard) -->
+    <div id="childLoginModal" class="modal-overlay hidden">
+      <div class="auth-card" style="margin:auto">
+        <h2>👤 Login da Criança</h2>
+        <div id="childLoginError" class="error-msg hidden"></div>
+        <div class="form-group">
+          <label>Usuário</label>
+          <input type="text" class="form-input" id="childLoginNickname" placeholder="Seu apelido">
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" class="form-input" id="childLoginPassword" placeholder="Sua senha">
+        </div>
+        <button class="btn btn-primary" onclick="doChildLogin()">🚀 Entrar</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('childLoginModal').classList.add('hidden')">Cancelar</button>
+      </div>
+    </div>
+
     <!-- Register Pai -->
     <div class="auth-card hidden" id="registerCard">
       <h2>Criar Conta</h2>
@@ -1164,6 +1182,18 @@
     const style = document.createElement('style');
     style.textContent = '@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }';
     document.head.appendChild(style);
+
+    // ═══════════════════════════════════════
+    // NAVEGAÇÃO (Dashboard)
+    // ═══════════════════════════════════════
+    
+    function showDashboard() {
+      // Esconder páginas filhas
+      document.getElementById('historyPage')?.classList.add('hidden');
+      document.getElementById('conversationPage')?.classList.add('hidden');
+      // Mostrar dashboard
+      document.getElementById('dashboardPage')?.classList.remove('hidden');
+    }
 
     // ═══════════════════════════════════════
     // HISTÓRICO DE CONVERSAS
