@@ -11,11 +11,13 @@ import cors from 'cors';
 import { GuardRailsEngine } from '../guardrails/index.js';
 import { chat } from '../ai/client.js';
 import { logger } from '../utils/logger.js';
+import { conversationRepository } from '../db/repositories/conversation.js';
 
 // Rotas
 import parentAuthRoutes from '../api/routes/parent-auth.js';
 import childrenRoutes from '../api/routes/children.js';
 import childAuthRoutes from '../api/routes/child-auth.js';
+import conversationRoutes from '../api/routes/conversations.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +37,7 @@ app.use(express.static(join(__dirname)));
 app.use('/api/auth/parent', parentAuthRoutes);
 app.use('/api/auth/child', childAuthRoutes);
 app.use('/api/parent/children', childrenRoutes);
+app.use('/api/conversations', conversationRoutes);
 
 // System prompts por modo
 const SYSTEM_PROMPTS = {
@@ -46,7 +49,7 @@ const SYSTEM_PROMPTS = {
 // API Chat
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, mode, history } = req.body;
+    const { message, mode, history, childId } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Mensagem vazia' });
@@ -55,6 +58,16 @@ app.post('/api/chat', async (req, res) => {
     // Guard Rails (Input)
     const inputCheck = await guardrails.check({ message, userId: 'web-user' });
     if (!inputCheck.safe) {
+      // Salvar conversa bloqueada
+      if (childId) {
+        await conversationRepository.create({
+          childId,
+          input: message,
+          status: 'blocked',
+          blockReason: inputCheck.reason || 'guardrail',
+          guardRail: JSON.stringify(inputCheck),
+        });
+      }
       return res.json({ 
         response: '🛡️ Essa pergunta está fora do contexto escolar. Que tal perguntar sobre matérias?'
       });
@@ -76,6 +89,19 @@ app.post('/api/chat', async (req, res) => {
     // Guard Rails (Output)
     const outputCheck = await guardrails.checkOutput(result.content);
     const response = outputCheck.safe ? result.content : '🤔 Ops! Tente perguntar de novo.';
+
+    // Salvar conversa aprovada
+    if (childId) {
+      await conversationRepository.create({
+        childId,
+        input: message,
+        output: response,
+        status: 'approved',
+        model: result.model,
+        tokens: result.usage?.total_tokens || null,
+        guardRail: JSON.stringify({ input: inputCheck, output: outputCheck }),
+      });
+    }
 
     res.json({ response, mode, model: result.model });
 
