@@ -16,9 +16,31 @@ const ILLEGAL_PATTERNS = [
   /descobrir\s+a\s+senha/i,
 ];
 
-// Palavras bloqueadas (apenas contexto claro de perigo)
+// Palavras bloqueadas (contexto claro de perigo)
 const BLOCKED_KEYWORDS = [
   'pornografia', 'nudez', 'cp', 'child',
+];
+
+// Palavras de conteúdo sensível (suicídio, autolesão, saúde mental)
+const SENSITIVE_KEYWORDS = [
+  'suicídio', 'suicidio', 'suicida',
+  'matar', 'me matar', 'se matar',
+  'morrer', 'quero morrer', 'querer morrer',
+  'tirar a vida', 'acabar com a vida',
+  'autolesão', 'autocorte', 'se cortar',
+  'overdose', 'tomar remédio demais',
+  'pular do', 'enforcar',
+];
+
+// Padrões de conteúdo sensível (regex)
+const SENSITIVE_PATTERNS = [
+  /como\s+(matar|morreu|morrer)/i,
+  /(quero|vou|vai)\s+(morrer|me\s+matar)/i,
+  /tirar\s+(minha|a)\s+vida/i,
+  /acabar\s+com\s+(minha|a)\s+vida/i,
+  /não\s+(quero|vale)\s+(mais\s+)?viver/i,
+  /life\s+isn'?t\s+worth/i,
+  /ways?\s+to\s+(die|kill)/i,
 ];
 
 // Padrões de pergunta educativa (permitidos)
@@ -54,7 +76,7 @@ const HOW_TO_BAD_PATTERNS = [
 ];
 
 const MAX_MESSAGE_LENGTH = 500;
-const MIN_MESSAGE_LENGTH = 3;
+const MIN_MESSAGE_LENGTH = 2;
 
 export class GuardRailsEngine {
   constructor() {
@@ -104,6 +126,23 @@ export class GuardRailsEngine {
     const blockedWord = BLOCKED_KEYWORDS.find(word => lowerMessage.includes(word));
     if (blockedWord) {
       return { safe: false, reason: 'Conteúdo inadequado', layers: ['keywords'] };
+    }
+
+    // Camada 4.5: Conteúdo sensível (suicídio, autolesão)
+    const sensitiveWord = SENSITIVE_KEYWORDS.find(word => lowerMessage.includes(word));
+    if (sensitiveWord) {
+      return { 
+        safe: false, 
+        reason: '🛡️ Se você está passando por um momento difícil, por favor procure ajuda! Você não está sozinho(a). Em caso de urgência, ligue para o CVV: 188 (24h).', 
+        layers: ['sensitive'] 
+      };
+    }
+    if (SENSITIVE_PATTERNS.some(p => p.test(message))) {
+      return { 
+        safe: false, 
+        reason: '🛡️ Se você está passando por um momento difícil, por favor procure ajuda! Você não está sozinho(a). Em caso de urgência, ligue para o CVV: 188 (24h).', 
+        layers: ['sensitive'] 
+      };
     }
 
     // Camada 5: Ilegalidade explícita
