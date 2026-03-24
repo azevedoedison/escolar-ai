@@ -3,312 +3,1339 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escolar AI - Seu Tutor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>Escolar AI - Seu Tutor Digital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
+    :root {
+      /* Teen Theme - Bold & Playful */
+      --bg: #0d0d12;
+      --bg-card: rgba(26, 26, 35, 0.8);
+      --bg-glass: rgba(255, 255, 255, 0.05);
+      --bg-input: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.1);
+      --border-glow: rgba(255, 255, 255, 0.2);
+      
+      /* Neon Gradient Colors */
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --secondary: #ec4899;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      
+      /* Gradients */
+      --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+      --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%);
+      --gradient-card: linear-gradient(145deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%);
+      
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
     body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Poppins', -apple-system, sans-serif;
+      background: var(--bg);
+      background-image: 
+        radial-gradient(ellipse at 20% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+      color: var(--text);
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
     }
 
-    .container {
-      width: 100%;
-      max-width: 700px;
-      background: #fff;
+    /* ═══════════════════════════════════════ */
+    /* NAV - Glassmorphism */
+    /* ═══════════════════════════════════════ */
+    .nav {
+      background: rgba(13, 13, 18, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav h1 { 
+      font-size: 20px; 
+      font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav .spacer { flex: 1; }
+    .nav .user-info { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+    .nav .user-info span { color: var(--text-muted); }
+    .nav-btn {
+      padding: 8px 16px;
       border-radius: 20px;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      height: 85vh;
-    }
-
-    .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 24px;
-      text-align: center;
-    }
-
-    .header h1 {
-      font-size: 1.8rem;
-      margin-bottom: 8px;
-    }
-
-    .header p {
-      opacity: 0.9;
-      font-size: 0.95rem;
-    }
-
-    .chat {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      background: #f8f9fa;
-    }
-
-    .message {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .message.user { justify-content: flex-end; }
-
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      flex-shrink: 0;
-    }
-
-    .message.bot .avatar { background: #667eea; }
-    .message.user .avatar { background: #10a37f; }
-
-    .bubble {
-      max-width: 75%;
-      padding: 14px 18px;
-      border-radius: 18px;
-      line-height: 1.5;
-      font-size: 0.95rem;
-    }
-
-    .message.bot .bubble {
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-bottom-left-radius: 4px;
-    }
-
-    .message.user .bubble {
-      background: #10a37f;
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-
-    .typing {
-      display: flex;
-      gap: 4px;
-      padding: 8px 0;
-    }
-
-    .typing span {
-      width: 8px;
-      height: 8px;
-      background: #667eea;
-      border-radius: 50%;
-      animation: bounce 1.4s infinite;
-    }
-
-    .typing span:nth-child(2) { animation-delay: 0.2s; }
-    .typing span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
-    }
-
-    .input-area {
-      padding: 20px;
-      background: white;
-      border-top: 1px solid #e0e0e0;
-    }
-
-    .input-wrapper {
-      display: flex;
-      gap: 12px;
-    }
-
-    input {
-      flex: 1;
-      padding: 14px 18px;
-      border: 2px solid #e0e0e0;
-      border-radius: 25px;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    input:focus { border-color: #667eea; }
-
-    button {
-      padding: 14px 28px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 25px;
-      font-size: 1rem;
-      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--bg-glass);
+      color: var(--text);
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.3s ease;
     }
-
-    button:hover {
+    .nav-btn:hover { 
+      background: var(--gradient-primary);
+      border-color: transparent;
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
     }
 
-    button:disabled {
-      opacity: 0.6;
+    /* ═══════════════════════════════════════ */
+    /* CONTAINER */
+    /* ═══════════════════════════════════════ */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+    /* ═══════════════════════════════════════ */
+    /* AUTH PAGES - Glassmorphism */
+    /* ═══════════════════════════════════════ */
+    .auth-container {
+      max-width: 420px;
+      margin: 80px auto;
+      padding: 0 20px;
+    }
+    .auth-card {
+      background: var(--gradient-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(139, 92, 246, 0.1);
+    }
+    .auth-card h2 { 
+      text-align: center; 
+      margin-bottom: 8px; 
+      font-size: 26px;
+      font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .auth-card .subtitle { 
+      text-align: center; 
+      color: var(--text-muted); 
+      margin-bottom: 28px; 
+      font-size: 14px; 
+    }
+
+    /* Tabs - Neon Style */
+    .tabs { 
+      display: flex; 
+      margin-bottom: 28px; 
+      background: var(--bg-input);
+      border-radius: 16px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+    .tab.active { 
+      background: var(--gradient-primary);
+      color: white;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    }
+    .tab:hover:not(.active) { 
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Form - Modern */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { 
+      display: block; 
+      font-size: 13px; 
+      font-weight: 600; 
+      margin-bottom: 8px; 
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 14px 18px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .form-input:focus { 
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+    .form-input::placeholder { color: var(--text-dim); }
+    .form-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Buttons - Neon Gradient */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .btn:hover::before { left: 100%; }
+    .btn-primary { 
+      background: var(--gradient-primary);
+      color: white;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    }
+    .btn-primary:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+    }
+    .btn-primary:disabled { 
+      background: var(--text-dim);
+      box-shadow: none;
       cursor: not-allowed;
       transform: none;
     }
+    .btn-secondary { 
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover { 
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--primary);
+    }
+    .btn-danger { 
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    }
+    .btn-danger:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.5);
+    }
+    .btn-sm { 
+      padding: 10px 18px; 
+      width: auto; 
+      font-size: 13px;
+      border-radius: 12px;
+    }
 
-    .suggestions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+    .error-msg { background: rgba(239,68,68,0.1); color: var(--danger); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+    .success-msg { background: rgba(16,163,127,0.1); color: var(--primary); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+
+    /* ═══════════════════════════════════════ */
+    /* DASHBOARD */
+    /* ═══════════════════════════════════════ */
+    .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .dash-header h2 { font-size: 20px; }
+
+    .child-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .child-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .child-name { font-size: 16px; font-weight: 600; }
+    .child-status {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    .child-status.active { background: rgba(16,163,127,0.15); color: var(--primary); }
+    .child-status.inactive { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .child-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.6; }
+    .child-stats { display: flex; gap: 24px; margin-bottom: 16px; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 20px; font-weight: 700; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+    .child-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .login-info {
+      background: rgba(16,163,127,0.08);
+      border: 1px dashed var(--primary);
+      border-radius: 8px;
+      padding: 12px 16px;
       margin-top: 12px;
+      font-size: 13px;
     }
+    .login-info strong { color: var(--primary); }
 
-    .suggestion {
-      padding: 8px 16px;
-      background: #f0f0f0;
-      border: none;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .suggestion:hover { background: #e0e0e0; }
-
-    .powered {
+    .empty-state {
       text-align: center;
-      padding: 12px;
-      font-size: 0.75rem;
-      color: #888;
-      background: #f8f9fa;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .emoji { font-size: 48px; margin-bottom: 16px; }
+    .empty-state p { margin-bottom: 20px; }
+
+    .hidden { display: none !important; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h3 { margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+    .modal-actions .btn { flex: 1; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .child-stats { gap: 16px; }
+      .child-actions { flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>🎓 Escolar AI</h1>
-      <p>Seu amigo para aprender brincando!</p>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- NAV BAR -->
+  <!-- ═══════════════════════════════════════ -->
+  <nav class="nav" id="navbar">
+    <h1>📚 Escolar AI</h1>
+    <div class="spacer"></div>
+    <div class="user-info" id="navUser"></div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- TELA: LOGIN / REGISTER -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="auth-container" id="authPage">
+    <!-- Login -->
+    <div class="auth-card" id="loginCard">
+      <h2>Entrar</h2>
+      <p class="subtitle">Acesse sua conta ou login do seu filho</p>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="parent" onclick="switchAuthTab('parent')">👨 Pai</div>
+        <div class="tab" data-tab="child" onclick="switchAuthTab('child')">👧 Filho</div>
+      </div>
+
+      <div id="loginError" class="error-msg hidden"></div>
+
+      <!-- Login Pai -->
+      <div id="parentLoginForm">
+        <div class="form-group">
+          <label>Email do pai</label>
+          <input type="email" class="form-input" id="parentEmail" placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" class="form-input" id="parentPassword" placeholder="Sua senha">
+        </div>
+        <button class="btn btn-primary" id="parentLoginBtn" onclick="parentLogin()">Entrar</button>
+        <p style="text-align:center; margin-top:16px; font-size:13px; color:var(--text-muted)">
+          Não tem conta? <a href="#" onclick="showRegister()" style="color:var(--primary)">Cadastrar</a>
+        </p>
+      </div>
+
+      <!-- Login Filho -->
+      <div id="childLoginForm" class="hidden">
+        <div class="form-group">
+          <label>Seu nome de usuário</label>
+          <input type="text" class="form-input" id="childNickname" placeholder="Seu apelido">
+        </div>
+        <div class="form-group">
+          <label>Sua senha</label>
+          <input type="password" class="form-input" id="childPassword" placeholder="Sua senha secreta">
+        </div>
+        <button class="btn btn-primary" onclick="childLogin()">🚀 Entrar</button>
+        <p style="text-align:center; margin-top:16px; font-size:13px; color:var(--text-muted)">
+          Esqueceu a senha? Peça para o papai! 👨
+        </p>
+      </div>
     </div>
 
-    <div class="chat" id="chat">
-      <div class="message bot">
-        <div class="avatar">🤖</div>
-        <div class="bubble">
-          Oi! Eu sou a <strong>Escolar AI</strong>! 🎉
-          <br><br>
-          Posso ajudar você com:
-          <br>• 🔬 Ciências
-          <br>• 📐 Matemática
-          <br>• 🌍 História
-          <br>• 📖 Português
-          <br><br>
-          O que você quer aprender hoje? 😊
+    <!-- Register Pai -->
+    <div class="auth-card hidden" id="registerCard">
+      <h2>Criar Conta</h2>
+      <p class="subtitle">Cadastre-se para usar o Escolar AI</p>
+
+      <div id="registerError" class="error-msg hidden"></div>
+      <div id="registerSuccess" class="success-msg hidden"></div>
+
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input type="text" class="form-input" id="regName" placeholder="Seu nome">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" class="form-input" id="regEmail" placeholder="seu@email.com">
+      </div>
+      <div class="form-group">
+        <label>Telefone (opcional)</label>
+        <input type="tel" class="form-input" id="regPhone" placeholder="(41) 99999-9999">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" class="form-input" id="regPassword" placeholder="Mínimo 6 caracteres">
+        <div class="form-hint">Mínimo 6 caracteres</div>
+      </div>
+      <button class="btn btn-primary" onclick="parentRegister()">Criar Conta</button>
+      <p style="text-align:center; margin-top:16px; font-size:13px; color:var(--text-muted)">
+        Já tem conta? <a href="#" onclick="showLogin()" style="color:var(--primary)">Entrar</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- TELA: DASHBOARD PAI -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="container hidden" id="dashboardPage">
+    <div class="dash-header">
+      <h2>👨‍👧‍👦 Meus Filhos</h2>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="showHistoryPage()">📊 Histórico</button>
+        <button class="btn btn-secondary btn-sm" onclick="showRetentionSettings()">⚙️ Configurações</button>
+        <button class="btn btn-primary btn-sm" onclick="showAddChild()">+ Adicionar Filho</button>
+      </div>
+    </div>
+    <div id="childrenList"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- TELA: HISTÓRICO DE CONVERSAS -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="container hidden" id="historyPage">
+    <div class="dash-header">
+      <h2>📊 Histórico de Conversas</h2>
+      <div style="display:flex; gap:8px;">
+        <select class="form-input" id="historyChildFilter" onchange="loadHistory()" style="width:auto;">
+          <option value="">Todos os filhos</option>
+        </select>
+        <input type="text" class="form-input" id="historySearch" placeholder="Buscar..." style="width:200px;">
+        <button class="btn btn-primary btn-sm" onclick="searchHistory()">🔍</button>
+        <button class="btn btn-secondary btn-sm" onclick="showDashboard()">← Voltar</button>
+      </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div id="historyStats" style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;">
+      <div style="background:var(--bg-card); padding:16px; border-radius:12px; text-align:center;">
+        <div style="font-size:24px; font-weight:bold; color:var(--primary);" id="statTotal">0</div>
+        <div style="color:var(--text-muted); font-size:14px;">Perguntas</div>
+      </div>
+      <div style="background:var(--bg-card); padding:16px; border-radius:12px; text-align:center;">
+        <div style="font-size:24px; font-weight:bold; color:#4ade80;" id="statSubjects">0</div>
+        <div style="color:var(--text-muted); font-size:14px;">Matérias</div>
+      </div>
+      <div style="background:var(--bg-card); padding:16px; border-radius:12px; text-align:center;">
+        <div style="font-size:24px; font-weight:bold; color:#fbbf24;" id="statFlags">0</div>
+        <div style="color:var(--text-muted); font-size:14px;">Alertas</div>
+      </div>
+      <div style="background:var(--bg-card); padding:16px; border-radius:12px; text-align:center;">
+        <div style="font-size:24px; font-weight:bold; color:#60a5fa;" id="statWeek">0</div>
+        <div style="color:var(--text-muted); font-size:14px;">Esta Semana</div>
+      </div>
+    </div>
+
+    <!-- Lista de conversas -->
+    <div id="historyList"></div>
+    <!-- Spacer para empurrar conteúdo acima do input fixo -->
+    <div style="height: 200px; flex-shrink: 0;"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- MODAL: Detalhe da Conversa -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="modal-overlay hidden" id="conversationModal">
+    <div class="modal" style="max-width:600px; max-height:80vh; overflow-y:auto;">
+      <h3 id="conversationTitle">Conversa</h3>
+      <div id="conversationMessages"></div>
+      <div class="modal-actions">
+        <button class="btn btn-danger btn-sm" id="deleteConversationBtn">🗑️ Deletar</button>
+        <button class="btn btn-secondary" onclick="closeConversationModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- MODAL: Configurações de Retenção -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="modal-overlay hidden" id="retentionModal">
+    <div class="modal">
+      <h3>⚙️ Configurações de Retenção</h3>
+      <p style="color:var(--text-muted); margin-bottom:16px;">
+        Por quanto tempo deseja manter o histórico de conversas?
+      </p>
+      <div class="form-group">
+        <label>Período de retenção</label>
+        <select class="form-input" id="retentionDays">
+          <option value="30">30 dias</option>
+          <option value="60">60 dias</option>
+          <option value="90" selected>90 dias (padrão)</option>
+          <option value="180">180 dias</option>
+          <option value="365">1 ano</option>
+          <option value="null">Sem limite</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeRetentionModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveRetention()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- MODAL: Adicionar/Editar Filho -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="modal-overlay hidden" id="childModal">
+    <div class="modal">
+      <h3 id="childModalTitle">Cadastrar Filho</h3>
+      <div id="childModalError" class="error-msg hidden"></div>
+      <input type="hidden" id="editChildId">
+
+      <div class="form-group">
+        <label>Nome completo *</label>
+        <input type="text" class="form-input" id="childName" placeholder="Nome do filho">
+      </div>
+      <div class="form-group">
+        <label>Idade * (6-14 anos)</label>
+        <input type="number" class="form-input" id="childAge" min="6" max="14" placeholder="10">
+      </div>
+      <div class="form-group">
+        <label>Nome de usuário (login) *</label>
+        <input type="text" class="form-input" id="childNicknameModal" placeholder="apelido123">
+        <div class="form-hint">Letras, números e underscore. 3-20 caracteres.</div>
+      </div>
+      <div class="form-group">
+        <label>Senha *</label>
+        <input type="password" class="form-input" id="childPasswordModal" placeholder="Mínimo 4 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Série</label>
+        <input type="text" class="form-input" id="childGrade" placeholder="5º ano">
+      </div>
+      <div class="form-group">
+        <label>Escola</label>
+        <input type="text" class="form-input" id="childSchool" placeholder="Nome da escola">
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <div class="form-group" style="flex:1">
+          <label>Cidade</label>
+          <input type="text" class="form-input" id="childCity" placeholder="Curitiba">
+        </div>
+        <div class="form-group" style="width:100px">
+          <label>Estado</label>
+          <input type="text" class="form-input" id="childState" placeholder="PR" maxlength="2">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeChildModal()">Cancelar</button>
+        <button class="btn btn-primary" id="saveChildBtn" onclick="saveChild()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- TELA: CHAT (Filho logado) - Teen Style -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="hidden" id="chatPage" style="display: flex; flex-direction: column; min-height: calc(100vh - 60px); padding-bottom: 160px;">
+    <div class="container" style="flex: 1; display: flex; flex-direction: column;">
+      <div class="dash-header" style="margin-bottom: 20px;">
+        <h2 style="font-size: 24px; font-weight: 700;">
+          <span style="background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">💬 Chat</span> 
+          <span style="font-size: 14px; color: var(--text-muted); font-weight: 400; margin-left: 8px;">Escolar AI</span>
+        </h2>
+      </div>
+      <div class="messages" id="messages" style="flex: 1; overflow-y: auto; padding: 10px 0;">
+        <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
+          <div style="font-size:64px; margin-bottom:16px; filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));">🤖</div>
+          <p style="font-size: 18px; font-weight: 500;">Olá! Sou o <span style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Escolar AI</span></p>
+          <p style="margin-top: 8px;">Pode me perguntar qualquer coisa sobre escola!</p>
         </div>
       </div>
     </div>
-
-    <div class="input-area">
-      <div class="suggestions">
-        <button class="suggestion" onclick="ask('O que é fotossíntese?')">🔬 Fotossíntese</button>
-        <button class="suggestion" onclick="ask('Como calcular área do triângulo?')">📐 Área triângulo</button>
-        <button class="suggestion" onclick="ask('Quem descobriu o Brasil?')">🌍 Descoberta</button>
+    <!-- Input Area - Fixed Bottom with Glassmorphism -->
+    <div style="position:fixed; bottom:0; left:0; right:0; background:var(--bg-card); border-top:1px solid var(--border); padding:16px; z-index:50;">
+      <div style="max-width: 800px; margin: 0 auto; display: flex; gap: 12px; align-items: center;">
+        <input type="text" class="form-input" id="chatInput" placeholder="Digite sua pergunta..." 
+               style="flex:1; border-radius: 24px; padding: 16px 24px; font-size: 16px; background: var(--bg-input); border: 1px solid var(--border);" 
+               onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn btn-primary" style="width: auto; padding: 16px 32px; border-radius: 24px; font-size: 16px;" onclick="sendChat()">
+          <span style="display: flex; align-items: center; gap: 8px;">
+            Enviar
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
+          </span>
+        </button>
       </div>
-      <div class="input-wrapper">
-        <input type="text" id="input" placeholder="Pergunte algo sobre escola..." onkeypress="handleKey(event)">
-        <button id="send" onclick="send()">Enviar</button>
-      </div>
-    </div>
-
-    <div class="powered">
-      🤖 Powered by OpenRouter + Ollama | Guard Rails Ativo 🛡️
     </div>
   </div>
 
   <script>
-    const chat = document.getElementById('chat');
-    const input = document.getElementById('input');
-    const sendBtn = document.getElementById('send');
+    // ═══════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════
+    let state = {
+      token: localStorage.getItem('token'),
+      refreshToken: localStorage.getItem('refreshToken'),
+      userType: localStorage.getItem('userType'), // 'parent' or 'child'
+      user: JSON.parse(localStorage.getItem('user') || 'null'),
+      conversationId: null, // ID da conversa atual (para histórico)
+    };
 
-    function addMessage(text, isUser) {
-      const div = document.createElement('div');
-      div.className = `message ${isUser ? 'user' : 'bot'}`;
-      div.innerHTML = `
-        <div class="avatar">${isUser ? '👤' : '🤖'}</div>
-        <div class="bubble">${text.replace(/\n/g, '<br>')}</div>
-      `;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
+    // ═══════════════════════════════════════
+    // API HELPER
+    // ═══════════════════════════════════════
+    async function api(url, options = {}) {
+      const headers = { 'Content-Type': 'application/json', ...options.headers };
+      if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+      
+      const res = await fetch(url, { ...options, headers });
+      const data = await res.json();
+      
+      if (res.status === 401 && state.refreshToken) {
+        // Tentar refresh
+        const refreshed = await tryRefresh();
+        if (refreshed) {
+          headers['Authorization'] = `Bearer ${state.token}`;
+          const retry = await fetch(url, { ...options, headers });
+          return retry.json();
+        }
+      }
+      
+      return data;
     }
 
-    function showTyping() {
-      const div = document.createElement('div');
-      div.id = 'typing';
-      div.className = 'message bot';
-      div.innerHTML = `
-        <div class="avatar">🤖</div>
-        <div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>
-      `;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
-    function removeTyping() {
-      document.getElementById('typing')?.remove();
-    }
-
-    async function send() {
-      const text = input.value.trim();
-      if (!text) return;
-
-      addMessage(text, true);
-      input.value = '';
-      sendBtn.disabled = true;
-      showTyping();
-
+    async function tryRefresh() {
       try {
-        const res = await fetch('/api/chat', {
+        const res = await fetch(`/api/auth/${state.userType}/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({ refreshToken: state.refreshToken }),
         });
+        if (!res.ok) { logout(); return false; }
         const data = await res.json();
-        
-        removeTyping();
-        addMessage(data.response || 'Ops! Algo deu errado.', false);
-      } catch (err) {
-        removeTyping();
-        addMessage('🤔 Ops! Tente novamente.', false);
+        state.token = data.accessToken;
+        state.refreshToken = data.refreshToken;
+        localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        return true;
+      } catch { logout(); return false; }
+    }
+
+    // ═══════════════════════════════════════
+    // AUTH TABS
+    // ═══════════════════════════════════════
+    function switchAuthTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+      document.getElementById('parentLoginForm').classList.toggle('hidden', tab !== 'parent');
+      document.getElementById('childLoginForm').classList.toggle('hidden', tab !== 'child');
+      document.getElementById('loginError').classList.add('hidden');
+    }
+
+    function showRegister() {
+      document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('registerCard').classList.remove('hidden');
+    }
+
+    function showLogin() {
+      document.getElementById('registerCard').classList.add('hidden');
+      document.getElementById('loginCard').classList.remove('hidden');
+    }
+
+    // ═══════════════════════════════════════
+    // LOGIN PAI
+    // ═══════════════════════════════════════
+    async function parentLogin() {
+      const email = document.getElementById('parentEmail').value;
+      const password = document.getElementById('parentPassword').value;
+      const errorEl = document.getElementById('loginError');
+
+      if (!email || !password) {
+        errorEl.textContent = 'Preencha email e senha';
+        errorEl.classList.remove('hidden');
+        return;
       }
 
-      sendBtn.disabled = false;
-      input.focus();
+      const data = await api('/api/auth/parent/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (data.error) {
+        errorEl.textContent = data.error;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      setAuth('parent', data);
     }
 
-    function ask(text) {
-      input.value = text;
-      send();
+    // ═══════════════════════════════════════
+    // REGISTER PAI
+    // ═══════════════════════════════════════
+    async function parentRegister() {
+      const name = document.getElementById('regName').value;
+      const email = document.getElementById('regEmail').value;
+      const phone = document.getElementById('regPhone').value;
+      const password = document.getElementById('regPassword').value;
+      const errorEl = document.getElementById('registerError');
+      const successEl = document.getElementById('registerSuccess');
+
+      if (!name || !email || !password) {
+        errorEl.textContent = 'Preencha nome, email e senha';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      const data = await api('/api/auth/parent/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, phone, password }),
+      });
+
+      if (data.error) {
+        errorEl.textContent = data.error;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      setAuth('parent', data);
     }
 
-    function handleKey(e) {
-      if (e.key === 'Enter') send();
+    // ═══════════════════════════════════════
+    // LOGIN FILHO
+    // ═══════════════════════════════════════
+    async function childLogin() {
+      const nickname = document.getElementById('childNickname').value;
+      const password = document.getElementById('childPassword').value;
+      const errorEl = document.getElementById('loginError');
+
+      if (!nickname || !password) {
+        errorEl.textContent = 'Preencha usuário e senha';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      const data = await api('/api/auth/child/login', {
+        method: 'POST',
+        body: JSON.stringify({ nickname, password }),
+      });
+
+      if (data.error) {
+        errorEl.textContent = data.error;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      setAuth('child', data);
     }
 
-    input.focus();
+    // ═══════════════════════════════════════
+    // SET AUTH STATE
+    // ═══════════════════════════════════════
+    function setAuth(userType, data) {
+      state.token = data.accessToken;
+      state.refreshToken = data.refreshToken;
+      state.userType = userType;
+      state.user = userType === 'parent' ? data.parent : data.child;
+
+      localStorage.setItem('token', state.token);
+      localStorage.setItem('refreshToken', state.refreshToken);
+      localStorage.setItem('userType', state.userType);
+      localStorage.setItem('user', JSON.stringify(state.user));
+
+      renderApp();
+    }
+
+    function logout() {
+      state = { token: null, refreshToken: null, userType: null, user: null };
+      localStorage.clear();
+      renderApp();
+    }
+
+    // ═══════════════════════════════════════
+    // RENDER
+    // ═══════════════════════════════════════
+    function renderApp() {
+      const navUser = document.getElementById('navUser');
+      const authPage = document.getElementById('authPage');
+      const dashboardPage = document.getElementById('dashboardPage');
+      const chatPage = document.getElementById('chatPage');
+
+      if (!state.token) {
+        // Não logado
+        authPage.classList.remove('hidden');
+        dashboardPage.classList.add('hidden');
+        chatPage.classList.add('hidden');
+        navUser.innerHTML = '';
+        return;
+      }
+
+      // Logado
+      authPage.classList.add('hidden');
+      navUser.innerHTML = `
+        <span>Olá, ${state.user.name || state.user.nickname}</span>
+        <button class="nav-btn" onclick="logout()">Sair</button>
+      `;
+
+      if (state.userType === 'parent') {
+        dashboardPage.classList.remove('hidden');
+        chatPage.classList.add('hidden');
+        loadChildren();
+      } else {
+        dashboardPage.classList.add('hidden');
+        chatPage.classList.remove('hidden');
+      }
+    }
+
+    // ═══════════════════════════════════════
+    // CHILDREN (DASHBOARD)
+    // ═══════════════════════════════════════
+    async function loadChildren() {
+      const data = await api('/api/parent/children');
+      const list = document.getElementById('childrenList');
+
+      if (!data.children || data.children.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">👧</div>
+            <p>Nenhum filho cadastrado ainda.</p>
+            <button class="btn btn-primary btn-sm" onclick="showAddChild()">+ Cadastrar Filho</button>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = data.children.map(child => `
+        <div class="child-card">
+          <div class="child-header">
+            <span class="child-name">${child.name} (${child.age} anos)</span>
+            <span class="child-status ${child.active ? 'active' : 'inactive'}">
+              ${child.active ? '✅ Ativo' : '🚫 Desativado'}
+            </span>
+          </div>
+          <div class="child-meta">
+            🏫 ${child.school || 'Não informado'} | 📍 ${child.city || ''}/${child.state || ''}<br>
+            👤 Login: <strong>${child.nickname}</strong>
+          </div>
+          <div class="child-actions">
+            <button class="btn btn-primary btn-sm" onclick="startChat('${child.id}')">💬 Conversar</button>
+            <button class="btn btn-secondary btn-sm" onclick="toggleChild('${child.id}', ${!child.active})">
+              ${child.active ? '🚫 Desativar' : '✅ Ativar'}
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="resetChildPassword('${child.id}')">🔑 Redefinir Senha</button>
+            <button class="btn btn-secondary btn-sm" onclick="showEditChild('${child.id}')">✏️ Editar</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ═══════════════════════════════════════
+    // INICIAR CHAT COMO FILHO
+    // ═══════════════════════════════════════
+    async function startChat(childId) {
+      // Buscar dados do filho para login
+      const children = await api('/api/parent/children');
+      const child = children.children?.find(c => c.id === childId);
+      if (!child) {
+        alert('Filho não encontrado');
+        return;
+      }
+      
+      // Mostrar modal de senha
+      state.childToLogin = child;
+      document.getElementById('childLoginNickname').value = child.nickname;
+      document.getElementById('childLoginPassword').value = '';
+      document.getElementById('childLoginError').classList.add('hidden');
+      document.getElementById('childLoginModal').classList.remove('hidden');
+    }
+
+    async function doChildLogin() {
+      const child = state.childToLogin;
+      const password = document.getElementById('childLoginPassword').value;
+      const errorEl = document.getElementById('childLoginError');
+      
+      if (!password) {
+        errorEl.textContent = 'Digite a senha';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      
+      const result = await fetch('/api/auth/child/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: child.nickname, password })
+      });
+      
+      const data = await result.json();
+      if (data.error) {
+        errorEl.textContent = 'Senha incorreta';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      
+      // Fechar modal
+      document.getElementById('childLoginModal').classList.add('hidden');
+      
+      // Salvar token e mostrar chat
+      state.token = data.accessToken;
+      state.refreshToken = data.refreshToken;
+      state.userType = 'child';
+      state.user = data.child;
+      state.conversationId = null;
+      
+      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('userType', 'child');
+      localStorage.setItem('user', JSON.stringify(data.child));
+      
+      renderApp();
+    }
+
+    // ═══════════════════════════════════════
+    // MODAL FILHO
+    // ═══════════════════════════════════════
+    function showAddChild() {
+      document.getElementById('childModalTitle').textContent = 'Cadastrar Filho';
+      document.getElementById('editChildId').value = '';
+      document.getElementById('childName').value = '';
+      document.getElementById('childAge').value = '';
+      document.getElementById('childNicknameModal').value = '';
+      document.getElementById('childPasswordModal').value = '';
+      document.getElementById('childGrade').value = '';
+      document.getElementById('childSchool').value = '';
+      document.getElementById('childCity').value = '';
+      document.getElementById('childState').value = '';
+      document.getElementById('childModalError').classList.add('hidden');
+      document.getElementById('childModal').classList.remove('hidden');
+    }
+
+    async function showEditChild(id) {
+      const data = await api(`/api/parent/children/${id}`);
+      if (!data.child) return;
+      const c = data.child;
+
+      document.getElementById('childModalTitle').textContent = 'Editar Filho';
+      document.getElementById('editChildId').value = c.id;
+      document.getElementById('childName').value = c.name;
+      document.getElementById('childAge').value = c.age;
+      document.getElementById('childNicknameModal').value = c.nickname;
+      document.getElementById('childPasswordModal').value = '';
+      document.getElementById('childGrade').value = c.grade || '';
+      document.getElementById('childSchool').value = c.school || '';
+      document.getElementById('childCity').value = c.city || '';
+      document.getElementById('childState').value = c.state || '';
+      document.getElementById('childModalError').classList.add('hidden');
+      document.getElementById('childModal').classList.remove('hidden');
+    }
+
+    function closeChildModal() {
+      document.getElementById('childModal').classList.add('hidden');
+    }
+
+    async function saveChild() {
+      const id = document.getElementById('editChildId').value;
+      const body = {
+        name: document.getElementById('childName').value,
+        age: Number(document.getElementById('childAge').value),
+        nickname: document.getElementById('childNicknameModal').value,
+        password: document.getElementById('childPasswordModal').value,
+        grade: document.getElementById('childGrade').value,
+        school: document.getElementById('childSchool').value,
+        city: document.getElementById('childCity').value,
+        state: document.getElementById('childState').value,
+      };
+
+      const errorEl = document.getElementById('childModalError');
+
+      if (!body.name || !body.age || !body.nickname || (!body.password && !id)) {
+        errorEl.textContent = 'Preencha os campos obrigatórios (*)';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      const url = id ? `/api/parent/children/${id}` : '/api/parent/children';
+      const method = id ? 'PATCH' : 'POST';
+
+      // Se editando e senha vazia, não enviar
+      if (id && !body.password) delete body.password;
+
+      const data = await api(url, { method, body: JSON.stringify(body) });
+
+      if (data.error) {
+        errorEl.textContent = data.error;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      closeChildModal();
+      loadChildren();
+    }
+
+    async function toggleChild(id, active) {
+      await api(`/api/parent/children/${id}/toggle`, { method: 'POST' });
+      loadChildren();
+    }
+
+    async function resetChildPassword(id) {
+      const newPass = prompt('Nova senha para o filho (mínimo 4 caracteres):');
+      if (!newPass) return;
+      if (newPass.length < 4) { alert('Senha muito curta!'); return; }
+      
+      const data = await api(`/api/parent/children/${id}/reset-password`, {
+        method: 'POST',
+        body: JSON.stringify({ newPassword: newPass }),
+      });
+      
+      alert(data.error || 'Senha redefinida com sucesso!');
+    }
+
+    // ═══════════════════════════════════════
+    // CHAT (Filho)
+    // ═══════════════════════════════════════
+    async function sendChat() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const messages = document.getElementById('messages');
+      
+      // Adicionar mensagem do usuário - Teen Style
+      messages.innerHTML += `
+        <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; justify-content:flex-end;">
+          <div style="background: var(--gradient-primary); padding:16px 20px; border-radius:20px 4px 20px 20px; max-width:80%; line-height:1.7; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">
+            ${escapeHtml(message)}
+          </div>
+        </div>`;
+      
+      input.value = '';
+      messages.scrollTop = messages.scrollHeight;
+
+      // Loading Animation
+      const loadingId = 'loading-' + Date.now();
+      messages.innerHTML += `
+        <div id="${loadingId}" style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start;">
+          <div style="width:40px; height:40px; background: var(--gradient-accent); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);">🤖</div>
+          <div style="background: var(--gradient-card); backdrop-filter: blur(10px); padding:16px 20px; border-radius:4px 20px 20px 20px; border: 1px solid var(--border);">
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <span class="dot" style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out;"></span>
+              <span class="dot" style="width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out 0.2s;"></span>
+              <span class="dot" style="width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out 0.4s;"></span>
+            </div>
+          </div>
+        </div>`;
+      messages.scrollTop = messages.scrollHeight;
+
+      const data = await api('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          message, 
+          mode: 'study',
+          conversationId: state.conversationId 
+        }),
+      });
+
+      document.getElementById(loadingId)?.remove();
+
+      // Salvar conversationId para próxima mensagem
+      if (data.conversationId) {
+        state.conversationId = data.conversationId;
+      }
+
+      // Resposta da IA - Teen Style
+      messages.innerHTML += `
+        <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start;">
+          <div style="width:40px; height:40px; background: var(--gradient-accent); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);">🤖</div>
+          <div style="background: var(--gradient-card); backdrop-filter: blur(10px); padding:16px 20px; border-radius:4px 20px 20px 20px; border: 1px solid var(--border); max-width:80%; line-height:1.7;">
+            ${renderMarkdown(data.response || 'Erro na resposta')}
+          </div>
+        </div>`;
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // User message style
+    function addUserMessage(text) {
+      const messages = document.getElementById('messages');
+      messages.innerHTML += `
+        <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; justify-content:flex-end;">
+          <div style="background: var(--gradient-primary); padding:16px 20px; border-radius:20px 4px 20px 20px; max-width:80%; line-height:1.7; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">
+            ${escapeHtml(text)}
+          </div>
+        </div>`;
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Renderizar markdown simples para HTML
+    function renderMarkdown(text) {
+      if (!text) return '';
+      
+      let html = escapeHtml(text);
+      
+      // Headers
+      html = html.replace(/^### (.+)$/gm, '<h4 style="margin:12px 0 6px;font-size:15px;">$1</h4>');
+      html = html.replace(/^## (.+)$/gm, '<h3 style="margin:14px 0 8px;font-size:17px;">$1</h3>');
+      html = html.replace(/^# (.+)$/gm, '<h2 style="margin:16px 0 10px;font-size:19px;">$1</h2>');
+      
+      // Bold
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      
+      // Italic
+      html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      
+      // Blockquotes (> texto)
+      html = html.replace(/^&gt; (.+)$/gm, '<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid var(--primary);background:rgba(139,92,246,0.1);border-radius:0 8px 8px 0;">$1</blockquote>');
+      
+      // Code blocks
+      html = html.replace(/```[\w]*\n([\s\S]*?)```/g, '<pre style="background:var(--bg-input);padding:12px;border-radius:8px;overflow-x:auto;margin:8px 0;"><code>$1</code></pre>');
+      html = html.replace(/`(.+?)`/g, '<code style="background:var(--bg-input);padding:2px 6px;border-radius:4px;font-size:13px;">$1</code>');
+      
+      // Lists
+      html = html.replace(/^- (.+)$/gm, '<li style="margin-left:20px;">$1</li>');
+      html = html.replace(/(<li.*<\/li>\n?)+/g, '<ul style="margin:8px 0;list-style:disc;">$&</ul>');
+      
+      // Horizontal rules (---)
+      html = html.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">');
+      
+      // Paragraphs (double newline)
+      html = html.replace(/\n\n/g, '</p><p style="margin:10px 0;">');
+      
+      // Single newlines to <br>
+      html = html.replace(/\n/g, '<br>');
+      
+      // Wrap in paragraph if not starting with block element
+      if (!html.startsWith('<')) {
+        html = '<p style="margin:10px 0;">' + html + '</p>';
+      }
+      
+      return html;
+    }
+
+    // Add keyframe animation
+    const style = document.createElement('style');
+    style.textContent = '@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }';
+    document.head.appendChild(style);
+
+    // ═══════════════════════════════════════
+    // HISTÓRICO DE CONVERSAS
+    // ═══════════════════════════════════════
+
+    async function showHistoryPage() {
+      document.getElementById('dashboardPage').classList.add('hidden');
+      document.getElementById('historyPage').classList.remove('hidden');
+      await loadChildrenForFilter();
+      await loadHistory();
+    }
+
+    async function loadChildrenForFilter() {
+      const data = await api('/api/parent/children');
+      const select = document.getElementById('historyChildFilter');
+      select.innerHTML = '<option value="">Todos os filhos</option>';
+      (data.children || []).forEach(child => {
+        select.innerHTML += `<option value="${child.id}">${child.nickname}</option>`;
+      });
+    }
+
+    async function loadHistory() {
+      const childId = document.getElementById('historyChildFilter').value;
+      let url = '/api/parent/children/' + (childId || 'all') + '/conversations';
+      
+      const data = await api(url);
+      const conversations = data.data || [];
+      
+      // Atualizar estatísticas
+      document.getElementById('statTotal').textContent = conversations.reduce((a, c) => a + c.messageCount, 0);
+      document.getElementById('statSubjects').textContent = [...new Set(conversations.map(c => c.subject).filter(Boolean))].length;
+      document.getElementById('statFlags').textContent = conversations.filter(c => c.hasFlags).length;
+      document.getElementById('statWeek').textContent = conversations.length;
+
+      // Renderizar lista
+      const list = document.getElementById('historyList');
+      if (conversations.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">Nenhuma conversa encontrada</div>';
+        return;
+      }
+
+      // Agrupar por data
+      const grouped = {};
+      conversations.forEach(conv => {
+        const date = new Date(conv.startedAt).toLocaleDateString('pt-BR');
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push(conv);
+      });
+
+      list.innerHTML = Object.entries(grouped).map(([date, convs]) => `
+        <div style="margin-bottom:24px;">
+          <h4 style="color:var(--text-muted); margin-bottom:12px;">${date}</h4>
+          ${convs.map(conv => `
+            <div style="background:var(--bg-card); padding:16px; border-radius:12px; margin-bottom:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="showConversation('${conv.id}')">
+              <div>
+                <span style="background:${getSubjectColor(conv.subject)}; padding:4px 8px; border-radius:4px; font-size:12px;">${conv.subject || 'geral'}</span>
+                <span style="margin-left:12px; color:var(--text-muted);">${conv.messageCount} mensagens</span>
+                ${conv.hasFlags ? '<span style="margin-left:8px;">⚠️</span>' : ''}
+              </div>
+              <div style="color:var(--text-muted); font-size:14px;">
+                ${new Date(conv.startedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    function getSubjectColor(subject) {
+      const colors = {
+        'matemática': '#3b82f6',
+        'português': '#22c55e',
+        'ciências': '#a855f7',
+        'história': '#f97316',
+        'geografia': '#78716c',
+        'inglês': '#ef4444'
+      };
+      return colors[subject] || '#6b7280';
+    }
+
+    async function searchHistory() {
+      const query = document.getElementById('historySearch').value;
+      if (!query || query.length < 2) return;
+
+      const data = await api('/api/parent/conversations/search?q=' + encodeURIComponent(query));
+      const results = data.data || [];
+
+      const list = document.getElementById('historyList');
+      if (results.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">Nenhum resultado encontrado</div>';
+        return;
+      }
+
+      list.innerHTML = results.map(result => `
+        <div style="background:var(--bg-card); padding:16px; border-radius:12px; margin-bottom:8px; cursor:pointer;" onclick="showConversation('${result.conversationId}')">
+          <div style="margin-bottom:8px;">
+            <span style="font-weight:600;">${result.childNickname}</span>
+            <span style="color:var(--text-muted); margin-left:8px;">${new Date(result.startedAt).toLocaleString('pt-BR')}</span>
+          </div>
+          ${result.matches.map(m => `
+            <div style="color:var(--text-muted); font-size:14px;">${m.highlight}</div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    async function showConversation(id) {
+      const data = await api('/api/parent/conversations/' + id);
+      
+      document.getElementById('conversationTitle').textContent = 
+        `Conversa - ${data.child.nickname} (${new Date(data.startedAt).toLocaleString('pt-BR')})`;
+      
+      const messagesEl = document.getElementById('conversationMessages');
+      messagesEl.innerHTML = (data.messages || []).map(msg => `
+        <div style="margin-bottom:12px; display:flex; gap:8px; ${msg.role === 'ASSISTANT' ? 'justify-content:flex-end;' : ''}">
+          <div style="max-width:80%; padding:12px 16px; border-radius:12px; background:${msg.role === 'USER' ? 'var(--bg-secondary)' : 'var(--primary)'};">
+            <div style="font-size:12px; color:${msg.role === 'USER' ? 'var(--text-muted)' : 'rgba(255,255,255,0.7)'}; margin-bottom:4px;">
+              ${msg.role === 'USER' ? '👤 Você' : '🤖 Escolar AI'}
+            </div>
+            ${msg.content}
+            ${msg.guardrailFlags ? '<div style="margin-top:4px;">⚠️ Flag de segurança</div>' : ''}
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('deleteConversationBtn').onclick = () => deleteConversation(id);
+      document.getElementById('conversationModal').classList.remove('hidden');
+    }
+
+    function closeConversationModal() {
+      document.getElementById('conversationModal').classList.add('hidden');
+    }
+
+    async function deleteConversation(id) {
+      if (!confirm('Tem certeza que deseja deletar esta conversa?')) return;
+      
+      await api('/api/parent/conversations/' + id, { method: 'DELETE' });
+      closeConversationModal();
+      await loadHistory();
+    }
+
+    // ═══════════════════════════════════════
+    // CONFIGURAÇÕES DE RETENÇÃO
+    // ═══════════════════════════════════════
+
+    async function showRetentionSettings() {
+      const data = await api('/api/parent/settings/retention');
+      document.getElementById('retentionDays').value = data.retentionDays || 90;
+      document.getElementById('retentionModal').classList.remove('hidden');
+    }
+
+    function closeRetentionModal() {
+      document.getElementById('retentionModal').classList.add('hidden');
+    }
+
+    async function saveRetention() {
+      const value = document.getElementById('retentionDays').value;
+      const retentionDays = value === 'null' ? null : parseInt(value);
+      
+      await api('/api/parent/settings/retention', {
+        method: 'PUT',
+        body: JSON.stringify({ retentionDays })
+      });
+      
+      closeRetentionModal();
+      alert('Configuração salva!');
+    }
+
+    // ═══════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════
+    renderApp();
   </script>
 </body>
 </html>
