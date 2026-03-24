@@ -16,9 +16,14 @@ const ILLEGAL_PATTERNS = [
   /descobrir\s+a\s+senha/i,
 ];
 
-// Palavras bloqueadas (contexto claro de perigo)
+// Palavras bloqueadas (contexto claro de perigo - ABSOLUTE BLOCK)
 const BLOCKED_KEYWORDS = [
   'pornografia', 'nudez', 'cp', 'child',
+  // Drogas
+  'maconha', 'cocaína', 'cocaina', ' crack', 'lsd', 'mdma', 'heroína', 'heroina',
+  'drogas', 'droga', 'fumar maconha', 'usar drogas', 'vape', 'baseado',
+  // Conteúdo adulto
+  'sexo', 'sexual', 'putaria', 'porno',
 ];
 
 // Palavras de conteúdo sensível (suicídio, autolesão, saúde mental)
