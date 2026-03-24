@@ -18,6 +18,7 @@ import parentAuthRoutes from '../api/routes/parent-auth.js';
 import childrenRoutes from '../api/routes/children.js';
 import childAuthRoutes from '../api/routes/child-auth.js';
 import conversationRoutes from '../api/routes/conversations.js';
+import settingsRoutes from '../api/routes/settings.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -38,6 +39,7 @@ app.use('/api/auth/parent', parentAuthRoutes);
 app.use('/api/auth/child', childAuthRoutes);
 app.use('/api/parent/children', childrenRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/parent/settings', settingsRoutes);
 
 // System prompts por modo
 const SYSTEM_PROMPTS = {

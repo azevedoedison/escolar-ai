@@ -1278,7 +1278,7 @@
       const query = document.getElementById('historySearch').value;
       if (!query || query.length < 2) return;
 
-      const data = await api('/api/parent/conversations/search?q=' + encodeURIComponent(query));
+      const data = await api('/api/conversations/search?q=' + encodeURIComponent(query));
       const results = data.data || [];
 
       const list = document.getElementById('historyList');
@@ -1301,7 +1301,7 @@
     }
 
     async function showConversation(id) {
-      const data = await api('/api/parent/conversations/' + id);
+      const data = await api('/api/conversations/detail/' + id);
       
       document.getElementById('conversationTitle').textContent = 
         `Conversa - ${data.child.nickname} (${new Date(data.startedAt).toLocaleString('pt-BR')})`;
@@ -1330,7 +1330,7 @@
     async function deleteConversation(id) {
       if (!confirm('Tem certeza que deseja deletar esta conversa?')) return;
       
-      await api('/api/parent/conversations/' + id, { method: 'DELETE' });
+      await api('/api/conversations/detail/' + id, { method: 'DELETE' });
       closeConversationModal();
       await loadHistory();
     }

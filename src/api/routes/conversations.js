@@ -11,6 +11,88 @@ import { authenticateParent } from '../../auth/parent-auth.js';
 const router = express.Router();
 
 /**
+ * GET /api/conversations/search?q=xxx
+ * Buscar conversas por texto (para o pai)
+ */
+router.get('/search', authenticateParent, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 2) {
+      return res.json({ data: [] });
+    }
+
+    // Buscar filhos do pai
+    const children = await childRepository.findByParentId(req.parent.id);
+    const childIds = children.map(c => c.id);
+
+    // Buscar conversas com o texto
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        childId: { in: childIds },
+        input: { contains: q, mode: 'insensitive' },
+      },
+      select: {
+        id: true,
+        input: true,
+        output: true,
+        status: true,
+        createdAt: true,
+        child: { select: { id: true, name: true, nickname: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    const data = conversations.map(c => ({
+      conversationId: c.id,
+      childId: c.child.id,
+      childNickname: c.child.nickname || c.child.name,
+      input: c.input,
+      output: c.output,
+      status: c.status,
+      startedAt: c.createdAt,
+    }));
+
+    res.json({ data });
+  } catch (error) {
+    console.error('Erro na busca:', error);
+    res.status(500).json({ error: 'Erro na busca' });
+  }
+});
+
+/**
+ * GET /api/conversations/detail/:id
+ * Buscar detalhes de uma conversa específica
+ */
+router.get('/detail/:id', authenticateParent, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+      include: {
+        child: { select: { id: true, name: true, nickname: true, parentId: true } },
+      },
+    });
+
+    if (!conversation || conversation.child.parentId !== req.parent.id) {
+      return res.status(404).json({ error: 'Conversa não encontrada' });
+    }
+
+    res.json(conversation);
+  } catch (error) {
+    console.error('Erro ao buscar conversa:', error);
+    res.status(500).json({ error: 'Erro ao buscar conversa' });
+  }
+});
+
+/**
  * GET /api/conversations/:childId
  * Buscar histórico de conversas de uma criança
  */
@@ -121,6 +203,36 @@ router.delete('/cleanup', authenticateParent, async (req, res) => {
   } catch (error) {
     console.error('Erro ao limpar conversas:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+/**
+ * DELETE /api/conversations/:id
+ * Deletar uma conversa específica
+ */
+router.delete('/:id', authenticateParent, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    // Verificar se a conversa pertence a um filho do pai
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+      include: { child: { select: { parentId: true } } },
+    });
+
+    if (!conversation || conversation.child.parentId !== req.parent.id) {
+      return res.status(404).json({ error: 'Conversa não encontrada' });
+    }
+
+    await prisma.conversation.delete({ where: { id } });
+
+    res.json({ message: 'Conversa deletada', id });
+  } catch (error) {
+    console.error('Erro ao deletar conversa:', error);
+    res.status(500).json({ error: 'Erro ao deletar conversa' });
   }
 });
 
