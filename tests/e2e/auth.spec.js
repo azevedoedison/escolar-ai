@@ -14,14 +14,14 @@ test.describe('🔐 Autenticação de Pais', () => {
     await page.goto(BASE_URL);
     
     // Ir para registro
-    await page.click('text=Criar conta');
+    await page.click('text=Cadastrar');
     await page.waitForTimeout(500);
     
     // Preencher e submeter
     await page.fill('#regName', 'Pai Teste E2E');
     await page.fill('#regEmail', `pai${TIMESTAMP}@test.com`);
     await page.fill('#regPassword', 'Test@123456');
-    await page.click('button:has-text("Criar Conta")');
+    await page.click('#registerCard button[type="submit"], #registerCard button:has-text("Criar")');
     
     await page.waitForTimeout(3000);
     
@@ -34,14 +34,14 @@ test.describe('🔐 Autenticação de Pais', () => {
   test('PAI-002: Registrar com email já existente', async ({ page }) => {
     await page.goto(BASE_URL);
     
-    await page.click('text=Criar conta');
+    await page.click('text=Cadastrar');
     await page.waitForTimeout(500);
     
     // Usar email que já existe (do teste anterior ou seed)
     await page.fill('#regName', 'Teste');
     await page.fill('#regEmail', 'testparent@test.com'); // email provavelmente existente
     await page.fill('#regPassword', 'Test@123456');
-    await page.click('button:has-text("Criar Conta")');
+    await page.click('#registerCard button:has-text("Criar")');
     
     await page.waitForTimeout(2000);
     
@@ -54,11 +54,11 @@ test.describe('🔐 Autenticação de Pais', () => {
   test('PAI-003: Registrar com campos vazios', async ({ page }) => {
     await page.goto(BASE_URL);
     
-    await page.click('text=Criar conta');
+    await page.click('text=Cadastrar');
     await page.waitForTimeout(500);
     
     // Clicar em criar sem preencher
-    await page.click('button:has-text("Criar Conta")');
+    await page.click('#registerCard button:has-text("Criar")');
     
     await page.waitForTimeout(1000);
     
