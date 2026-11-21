@@ -59,6 +59,8 @@ afterAll(async () => {
   await db.close();
 });
 
+// pin_hash não é legível pelo responsável; para `child`, seleciona só colunas liberadas.
+const sel = (t: string) => (t === 'child' ? 'id, family_id, nickname' : '*');
 const tables = [
   'family', 'guardian', 'child', 'device', 'family_settings',
   'conversation', 'message', 'safety_event', 'alert', 'audit_log',
@@ -67,18 +69,18 @@ const tables = [
 describe('isolamento entre famílias (leitura)', () => {
   for (const t of tables) {
     it(`${t}: responsável A vê só 1 linha, da própria família`, async () => {
-      const rows = await db.asUser(ids.userA, async (c) => (await c.query(`select * from public.${t}`)).rows);
+      const rows = await db.asUser(ids.userA, async (c) => (await c.query(`select ${sel(t)} from public.${t}`)).rows);
       expect(rows).toHaveLength(1);
     });
     it(`${t}: responsável B vê só 1 linha, e não a de A`, async () => {
-      const a = await db.asUser(ids.userA, async (c) => (await c.query(`select to_jsonb(x)::text as j from public.${t} x`)).rows);
-      const b = await db.asUser(ids.userB, async (c) => (await c.query(`select to_jsonb(x)::text as j from public.${t} x`)).rows);
+      const a = await db.asUser(ids.userA, async (c) => (await c.query(`select ${t === 'child' ? 'id::text' : 'to_jsonb(x)::text'} as j from public.${t} x`)).rows);
+      const b = await db.asUser(ids.userB, async (c) => (await c.query(`select ${t === 'child' ? 'id::text' : 'to_jsonb(x)::text'} as j from public.${t} x`)).rows);
       expect(b).toHaveLength(1);
       expect(b[0]).not.toEqual(a[0]);
     });
     it(`${t}: anônimo e usuário desconhecido não leem nada`, async () => {
-      await expect(db.asAnon((c) => c.query(`select * from public.${t}`))).rejects.toThrow(/permission denied/);
-      const rows = await db.asUser('00000000-0000-0000-0000-0000000000ff', async (c) => (await c.query(`select * from public.${t}`)).rows);
+      await expect(db.asAnon((c) => c.query(`select ${sel(t)} from public.${t}`))).rejects.toThrow(/permission denied/);
+      const rows = await db.asUser('00000000-0000-0000-0000-0000000000ff', async (c) => (await c.query(`select ${sel(t)} from public.${t}`)).rows);
       expect(rows).toHaveLength(0);
     });
   }
@@ -90,18 +92,10 @@ describe('isolamento entre famílias (leitura)', () => {
 });
 
 describe('isolamento entre famílias (escrita)', () => {
-  it('A não consegue criar filho na família B', async () => {
-    await expect(
-      db.asUser(ids.userA, (c) =>
-        c.query(`insert into child(family_id, nickname, birth_year) values ($1,'Intruso',2014)`, [ids.famB]),
-      ),
-    ).rejects.toThrow(/row-level security/);
-  });
-
   it('A não consegue mover o próprio filho para a família B', async () => {
     await expect(
       db.asUser(ids.userA, (c) => c.query(`update child set family_id = $1 where id = $2`, [ids.famB, ids.childA])),
-    ).rejects.toThrow(/row-level security/);
+    ).rejects.toThrow(/permission denied/);
   });
 
   it('A não altera nem apaga filho, configurações, alertas ou aparelhos de B (0 linhas afetadas)', async () => {
@@ -129,15 +123,21 @@ describe('isolamento entre famílias (escrita)', () => {
 });
 
 describe('o que o responsável pode fazer na própria família', () => {
-  it('cria e edita filho, resolve alerta e revoga aparelho', async () => {
+  it('edita filho, resolve alerta e revoga aparelho', async () => {
     await db.asUser(ids.userA, async (c) => {
-      const ins = await c.query(`insert into child(family_id, nickname, birth_year) values ($1,'Nova',2016) returning id`, [ids.famA]);
-      expect(ins.rows).toHaveLength(1);
-      expect((await c.query(`update child set grade='6º ano' where id=$1`, [ins.rows[0].id])).rowCount).toBe(1);
+      expect((await c.query(`update child set grade='6º ano' where id=$1`, [ids.childA])).rowCount).toBe(1);
       expect((await c.query(`update alert set status='resolved' where id=$1`, [ids.alA])).rowCount).toBe(1);
       expect((await c.query(`update device set revoked_at=now() where id=$1`, [ids.devA])).rowCount).toBe(1);
       expect((await c.query(`update family_settings set homework_mode=false where family_id=$1`, [ids.famA])).rowCount).toBe(1);
     });
+  });
+
+  it('não grava filho direto nem lê pin_hash (só pelas funções)', async () => {
+    await expect(
+      db.asUser(ids.userA, (c) => c.query(`insert into child(family_id, nickname, birth_year) values ($1,'x',2015)`, [ids.famA])),
+    ).rejects.toThrow(/permission denied/);
+    await expect(db.asUser(ids.userA, (c) => c.query(`select pin_hash from child`))).rejects.toThrow(/permission denied/);
+    await expect(db.asUser(ids.userA, (c) => c.query(`update child set pin_hash='x'`))).rejects.toThrow(/permission denied/);
   });
 });
 
