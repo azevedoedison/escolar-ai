@@ -1,0 +1,25 @@
+{
+  "name": "@tata/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "web": "expo start --web",
+    "android": "expo start --android",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "echo \"sem testes no app ainda\""
+  },
+  "dependencies": {
+    "@tata/shared": "workspace:*",
+    "expo": "~58.0.26",
+    "expo-router": "~58.0.32",
+    "expo-status-bar": "~58.0.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-native": "0.88.1",
+    "react-native-web": "~0.21.4"
+  },
+  "devDependencies": { "@types/react": "~19.3.0" }
+}

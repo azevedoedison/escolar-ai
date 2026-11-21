@@ -31,3 +31,11 @@ tmp/
 temp/
 .env
 coverage/
+
+# Monorepo
+.turbo/
+dist/
+.expo/
+coverage/
+test-results/
+*.tsbuildinfo
