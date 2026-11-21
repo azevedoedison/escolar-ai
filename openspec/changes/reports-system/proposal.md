@@ -28,6 +28,6 @@ Sistema de relatórios automáticos e alertas para pais.
 | Sob demanda | Automático + sob demanda |
 
 ## Tecnologias
-- **Cron:** OpenClaw cron (segundas 09:00)
+- **Cron:** agendamento semanal (segundas 09:00)
 - **Email:** Nodemailer (já configurado)
 - **Dados:** ConversationRepository (existente)
