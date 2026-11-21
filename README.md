@@ -1,77 +1,30 @@
-# 📚 Escolar AI
+# Tatá IA
 
-IA Educacional com Controle Parental via WhatsApp
+IA para crianças e adolescentes, com filtros de segurança, histórico e controle dos pais.
+App para celular, tablet e web (Expo), API em Hono e dados no Supabase.
 
-## 🎯 Visão Geral
+> Em construção. O plano completo está em `docs/tata-ia/` (quando mesclado) e as tarefas ficam no Linear (time TAT).
 
-O **Escolar AI** é uma plataforma de inteligência artificial educacional voltada para crianças (6-14 anos) que oferece:
+## Estrutura
 
-- 🛡️ **Guard Rails Educationais** - Responde apenas conteúdo escolar
-- 👨‍👩‍👧 **Controle Parental via WhatsApp** - Relatórios automáticos para pais
-- 💬 **Chat Simples** - Criança usa WhatsApp (sem instalar nada)
+| Pasta | O quê |
+|---|---|
+| `apps/mobile` | App Expo (celular, tablet e web) |
+| `apps/api` | API Hono |
+| `packages/shared` | Tipos e utilitários compartilhados |
+| `packages/safety` | Classificadores e política de segurança |
+| `legacy/` | Código antigo do Escolar AI, mantido só para consulta |
 
-## 📊 Mercado
+## Desenvolvimento
 
-- **EdTech Brasil:** USD 6,0 bi (2025) → USD 15,6 bi (2034)
-- **65%** das crianças 9-17 anos usam IA generativa
-- **Brasil TOP 3** no uso do ChatGPT
-
-## 🚀 Tecnologias
-
-- **Backend:** Node.js + Fastify
-- **IA:** OpenAI GPT-4o-mini
-- **WhatsApp:** 360dialog / Twilio
-- **Database:** PostgreSQL + Redis
-
-## 📁 Estrutura
-
-```
-escolar-ai/
-├── docs/           # Documentação
-├── src/            # Código fonte
-│   ├── bot/        # WhatsApp bot
-│   ├── api/        # Backend API
-│   └── database/   # Models
-├── config/         # Configurações
-└── scripts/        # Scripts úteis
-```
-
-## 🔧 Setup
+Requer Node 22 e pnpm 10.
 
 ```bash
-# Clonar repositório
-git clone https://github.com/robertclaw-ia/robert-edison-projects.git
-cd robert-edison-projects/escolar-ai
-
-# Instalar dependências
-npm install
-
-# Configurar variáveis de ambiente
-cp config/.env.example config/.env
-# Editar config/.env com suas chaves
-
-# Iniciar desenvolvimento
-npm run dev
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm test
 ```
 
-## 👥 Equipe
-
-- **Edison Azevedo** - CEO/Product
-- **Robert (IA)** - CTO/Dev Assistant
-
-## 📅 Timeline
-
-- **Mês 1-3:** MVP WhatsApp + Dogfooding
-- **Mês 3-4:** Beta (50 famílias)
-- **Mês 4-6:** Lançamento pago
-- **Mês 12-18:** Rodada Seed
-
----
-
-**Desenvolvido com ❤️ por Edison & Robert**
-
-## Hook de segredos
-
-Ative uma vez por clone, para bloquear commits com segredo literal:
-
-    git config core.hooksPath .githooks
+Ative o hook que bloqueia segredo literal: `git config core.hooksPath .githooks`.
+Nunca coloque chaves em arquivos; use variáveis de ambiente.
