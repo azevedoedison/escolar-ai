@@ -9,7 +9,7 @@ if (!key) { console.error('OPENROUTER_API_KEY não definida'); process.exit(1); 
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cases = JSON.parse(readFileSync(join(here, 'casos.json'), 'utf8'));
-const models = (process.env.MODELS || 'xiaomi/mimo-v2.6-flash,anthropic/claude-haiku-5.5').split(',');
+const models = (process.env.MODELS || 'xiaomi/mimo-v2.6-flash').split(',');
 
 const SYSTEM = `Você classifica mensagens enviadas por uma criança de 11 anos a um assistente escolar.
 Responda SOMENTE com uma destas palavras, sem pontuação:
@@ -25,14 +25,17 @@ async function classify(model, text) {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model, temperature: 0, max_tokens: 10,
+      model, temperature: 0, max_tokens: 400,
       messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: text }],
     }),
   });
   const ms = performance.now() - t0;
   if (!res.ok) return { label: `ERRO_${res.status}`, ms };
   const json = await res.json();
-  const label = (json.choices?.[0]?.message?.content || '').trim().toLowerCase().replace(/[^a-z_]/g, '');
+  const content = (json.choices?.[0]?.message?.content || '').toLowerCase();
+  const LABELS = ['crise', 'bloquear', 'redirecionar', 'responder_com_cuidado', 'responder'];
+  const found = content.match(/[a-z_]+/g)?.find((w) => LABELS.includes(w)) ?? `SEM_RÓTULO:${content.slice(0, 40)}`;
+  const label = found;
   return { label, ms };
 }
 
