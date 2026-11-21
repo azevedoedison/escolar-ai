@@ -28,3 +28,8 @@ pnpm test
 
 Ative o hook que bloqueia segredo literal: `git config core.hooksPath .githooks`.
 Nunca coloque chaves em arquivos; use variáveis de ambiente.
+
+## Banco de dados
+
+Migrações em `supabase/migrations/` (Postgres + RLS). Os testes de `packages/db` criam um banco temporário
+e precisam de um Postgres acessível em `DATABASE_URL` (padrão `postgres://postgres@localhost:5432/postgres`, usuário com permissão de criar bancos).
