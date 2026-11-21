@@ -12,6 +12,7 @@ import { GuardRailsEngine } from '../guardrails/index.js';
 import { chat } from '../ai/client.js';
 import { logger } from '../utils/logger.js';
 import { conversationRepository } from '../db/repositories/conversation.js';
+import { authenticateChild } from '../auth/child-auth.js';
 
 // Rotas
 import parentAuthRoutes from '../api/routes/parent-auth.js';
@@ -49,9 +50,11 @@ const SYSTEM_PROMPTS = {
 };
 
 // API Chat
-app.post('/api/chat', async (req, res) => {
+// Só a criança autenticada conversa; o childId vem do token, nunca do corpo
+app.post('/api/chat', authenticateChild, async (req, res) => {
   try {
-    const { message, mode, history, childId } = req.body;
+    const { message, mode, history } = req.body;
+    const childId = req.childId;
 
     if (!message) {
       return res.status(400).json({ error: 'Mensagem vazia' });
@@ -61,15 +64,13 @@ app.post('/api/chat', async (req, res) => {
     const inputCheck = await guardrails.check({ message, userId: 'web-user' });
     if (!inputCheck.safe) {
       // Salvar conversa bloqueada
-      if (childId) {
-        await conversationRepository.create({
-          childId,
-          input: message,
-          status: 'blocked',
-          blockReason: inputCheck.reason || 'guardrail',
-          guardRail: JSON.stringify(inputCheck),
-        });
-      }
+      await conversationRepository.create({
+        childId,
+        input: message,
+        status: 'blocked',
+        blockReason: inputCheck.reason || 'guardrail',
+        guardRail: JSON.stringify(inputCheck),
+      });
       return res.json({ 
         response: '🛡️ Essa pergunta está fora do contexto escolar. Que tal perguntar sobre matérias?'
       });
@@ -85,6 +86,13 @@ app.post('/api/chat', async (req, res) => {
     ], { maxTokens: 500 });
 
     if (!result.success) {
+      // A pergunta fica no histórico mesmo quando a IA falha: o pai precisa ver o que foi perguntado
+      await conversationRepository.create({
+        childId,
+        input: message,
+        status: 'error',
+        blockReason: 'ai_unavailable',
+      });
       return res.json({ response: '🤔 Ops! Tente novamente em alguns segundos.' });
     }
 
@@ -93,17 +101,15 @@ app.post('/api/chat', async (req, res) => {
     const response = outputCheck.safe ? result.content : '🤔 Ops! Tente perguntar de novo.';
 
     // Salvar conversa aprovada
-    if (childId) {
-      await conversationRepository.create({
-        childId,
-        input: message,
-        output: response,
-        status: 'approved',
-        model: result.model,
-        tokens: result.usage?.total_tokens || null,
-        guardRail: JSON.stringify({ input: inputCheck, output: outputCheck }),
-      });
-    }
+    await conversationRepository.create({
+      childId,
+      input: message,
+      output: response,
+      status: 'approved',
+      model: result.model,
+      tokens: result.usage?.total_tokens || null,
+      guardRail: JSON.stringify({ input: inputCheck, output: outputCheck }),
+    });
 
     res.json({ response, mode, model: result.model });
 

@@ -1,0 +1,56 @@
+name: E2E e segurança
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  e2e-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: escolar
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: escolar_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U escolar" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://escolar@localhost:5432/escolar_test
+      PORT: 3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - name: Gerar segredos efêmeros do job
+        run: |
+          echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "JWT_REFRESH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "OPENROUTER_API_KEY=$(openssl rand -hex 16)" >> "$GITHUB_ENV"
+      - name: Subir a aplicação
+        run: |
+          nohup node src/web/server.js > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:3000/health && break; sleep 1; done
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Testes de segurança e fluxos
+        run: npm run e2e:security
+      - name: Log do servidor
+        if: failure()
+        run: cat server.log
+      - name: Relatório de falhas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-falhas
+          path: test-results/
+          retention-days: 7

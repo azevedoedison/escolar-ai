@@ -3,9 +3,8 @@
  * Operações de banco para Conversation (histórico)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../client.js';
 
-const prisma = new PrismaClient();
 
 export class ConversationRepository {
   /**
@@ -135,12 +134,13 @@ export class ConversationRepository {
   /**
    * Deletar conversas antigas (> dias)
    */
-  async deleteOlderThan(days) {
+  async deleteOlderThan(days, childIds) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
 
     return prisma.conversation.deleteMany({
       where: {
+        childId: { in: childIds },
         createdAt: {
           lt: cutoff,
         },

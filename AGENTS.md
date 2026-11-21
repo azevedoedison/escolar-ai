@@ -169,3 +169,22 @@ module.exports = { MyService };
 ---
 
 *Última atualização: 2026-03-23*
+
+---
+
+## 🧪 Testes E2E e de segurança em todo PR
+
+Todo PR que muda código de API, autenticação, banco, guardrails ou interface precisa passar em `npm run e2e:security` (`tests/security/`).
+
+Para rodar localmente:
+
+```bash
+cp config/.env.example .env       # preencher JWT_SECRET, JWT_REFRESH_SECRET, OPENROUTER_API_KEY, DATABASE_URL
+npx prisma migrate deploy
+node src/web/server.js &          # sobe em http://localhost:3000
+npm run e2e:security
+```
+
+- Um defeito corrigido ganha um teste que falha antes da correção e passa depois.
+- Teste de isolamento entre famílias nunca é removido nem marcado como `skip`.
+- Os testes criam e apagam as próprias famílias; não dependem de usuário pré-criado.

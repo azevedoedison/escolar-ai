@@ -1211,16 +1211,21 @@
       const select = document.getElementById('historyChildFilter');
       select.innerHTML = '<option value="">Todos os filhos</option>';
       (data.children || []).forEach(child => {
-        select.innerHTML += `<option value="${child.id}">${child.nickname}</option>`;
+        select.innerHTML += `<option value="${child.id}">${escapeHtml(child.nickname)}</option>`;
       });
     }
 
     async function loadHistory() {
       const childId = document.getElementById('historyChildFilter').value;
-      let url = '/api/parent/children/' + (childId || 'all') + '/conversations';
-      
-      const data = await api(url);
-      const conversations = data.data || [];
+      const ids = childId ? [childId] : ((await api('/api/parent/children')).children || []).map(c => c.id);
+      const pages = await Promise.all(ids.map(id => api('/api/conversations/' + id)));
+      const conversations = pages.flatMap(p => p.conversations || []).map(c => ({
+        id: c.id,
+        startedAt: c.createdAt,
+        subject: null,
+        messageCount: c.output ? 2 : 1,
+        hasFlags: c.status === 'blocked',
+      }));
       
       // Atualizar estatísticas
       document.getElementById('statTotal').textContent = conversations.reduce((a, c) => a + c.messageCount, 0);
@@ -1290,12 +1295,10 @@
       list.innerHTML = results.map(result => `
         <div style="background:var(--bg-card); padding:16px; border-radius:12px; margin-bottom:8px; cursor:pointer;" onclick="showConversation('${result.conversationId}')">
           <div style="margin-bottom:8px;">
-            <span style="font-weight:600;">${result.childNickname}</span>
+            <span style="font-weight:600;">${escapeHtml(result.childNickname)}</span>
             <span style="color:var(--text-muted); margin-left:8px;">${new Date(result.startedAt).toLocaleString('pt-BR')}</span>
           </div>
-          ${result.matches.map(m => `
-            <div style="color:var(--text-muted); font-size:14px;">${m.highlight}</div>
-          `).join('')}
+          <div style="color:var(--text-muted); font-size:14px;">${escapeHtml(result.input)}</div>
         </div>
       `).join('');
     }
@@ -1304,16 +1307,20 @@
       const data = await api('/api/conversations/detail/' + id);
       
       document.getElementById('conversationTitle').textContent = 
-        `Conversa - ${data.child.nickname} (${new Date(data.startedAt).toLocaleString('pt-BR')})`;
+        `Conversa - ${data.child.nickname} (${new Date(data.createdAt).toLocaleString('pt-BR')})`;
       
+      // A API devolve uma linha com pergunta (input) e resposta (output)
+      const messages = [{ role: 'USER', content: data.input }];
+      if (data.output) messages.push({ role: 'ASSISTANT', content: data.output });
+
       const messagesEl = document.getElementById('conversationMessages');
-      messagesEl.innerHTML = (data.messages || []).map(msg => `
+      messagesEl.innerHTML = messages.map(msg => `
         <div style="margin-bottom:12px; display:flex; gap:8px; ${msg.role === 'ASSISTANT' ? 'justify-content:flex-end;' : ''}">
           <div style="max-width:80%; padding:12px 16px; border-radius:12px; background:${msg.role === 'USER' ? 'var(--bg-secondary)' : 'var(--primary)'};">
             <div style="font-size:12px; color:${msg.role === 'USER' ? 'var(--text-muted)' : 'rgba(255,255,255,0.7)'}; margin-bottom:4px;">
               ${msg.role === 'USER' ? '👤 Você' : '🤖 Escolar AI'}
             </div>
-            ${msg.content}
+            ${msg.role === 'USER' ? escapeHtml(msg.content) : renderMarkdown(msg.content)}
             ${msg.guardrailFlags ? '<div style="margin-top:4px;">⚠️ Flag de segurança</div>' : ''}
           </div>
         </div>

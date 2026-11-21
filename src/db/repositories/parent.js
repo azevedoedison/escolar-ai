@@ -3,9 +3,8 @@
  * Operações de banco para Parent
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../client.js';
 
-const prisma = new PrismaClient();
 
 export class ParentRepository {
   /**

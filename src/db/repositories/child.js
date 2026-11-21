@@ -3,10 +3,9 @@
  * Operações de banco para Child (filho/criança)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../client.js';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = 10;
 
 export class ChildRepository {
