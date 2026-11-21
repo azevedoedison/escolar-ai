@@ -46,8 +46,8 @@ WhatsApp, RAG de apostilas, integração com escolas, gamificação, voz e image
         │                           │                           │
 ┌───────▼────────┐        ┌─────────▼──────────┐       ┌────────▼─────────────┐
 │ Supabase (SP)  │        │ API da Anthropic   │       │ Notificações         │
-│ Postgres + RLS │        │ Claude Sonnet 5.5  │       │ Expo Push + e-mail   │
-│ Auth (pais)    │        │ Claude Haiku 5.5   │       │ (Resend)             │
+│ Postgres + RLS │        │ Claude Haiku 5.5   │       │ Expo Push + e-mail   │
+│ Auth (pais)    │        │ (esforço medium)   │       │ (Resend)             │
 └────────────────┘        └────────────────────┘       └──────────────────────┘
 ```
 
@@ -61,7 +61,7 @@ WhatsApp, RAG de apostilas, integração com escolas, gamificação, voz e image
 | Hospedagem da API | Fly.io ou Railway, região **São Paulo (gru)** | Baixa latência e dados no Brasil. |
 | Banco e login dos pais | **Supabase** (Postgres + Auth), região **São Paulo** | Login com e-mail, Google e Apple prontos; Row Level Security garante que um pai só vê os filhos dele (corrige o problema nº 2 do diagnóstico na raiz). |
 | ORM | Drizzle | Tipado, migrações simples, sem cliente pesado. |
-| IA | **Claude (Anthropic)**: Sonnet 5.5 para responder, Haiku 5.5 para classificar | Contrato comercial com termos de dados claros (a API não treina com os dados enviados), bom comportamento de segurança de base, saída estruturada para os classificadores. Custo na seção 3.4. |
+| IA | **Claude Haiku 5.5 (Anthropic)**, esforço `medium`, para responder e para classificar. Sonnet 5.5 fica como opção futura para perguntas complexas | Contrato comercial com termos de dados claros (a API não treina com os dados enviados), bom comportamento de segurança de base, saída estruturada para os classificadores. Custo na seção 3.4. |
 | Testes | Vitest (unidade), Playwright (web), Maestro (mobile), suíte de avaliação de segurança própria | Ver seção 6. |
 | Observabilidade | Sentry (erros) + logs sem conteúdo de mensagem | Não vazar conversas de crianças em logs. |
 
@@ -109,7 +109,7 @@ Recebe a mensagem e as últimas mensagens da conversa, e devolve: `categoria`, `
 | Ódio e discriminação | Bloquear conteúdo ofensivo; explicar respeito e diversidade quando for dúvida sincera. |
 | Lição de casa | **Modo Lição de Casa**: a Tatá guia com perguntas e explicações em vez de entregar a resposta pronta. Os pais escolhem se o modo é obrigatório. |
 
-**Camada 2 · Geração da resposta (Claude Sonnet 5.5)**
+**Camada 2 · Geração da resposta (Claude Haiku 5.5, esforço medium)**
 Prompt de sistema montado no servidor a partir de: idade, série, configurações da família e a decisão da camada 1. O histórico da conversa vem do banco, nunca do app (corrige o problema do diagnóstico). A Tatá tem personalidade definida: calorosa, curiosa, em português do Brasil, linguagem para a idade, cita quando não tem certeza, e sugere fontes confiáveis (Khan Academy, Brasil Escola, livros didáticos) em vez de links aleatórios.
 
 **Camada 3 · Classificador de saída (Claude Haiku 5.5)**
@@ -135,7 +135,7 @@ Suposição de uso intenso: 30 perguntas por dia, 900 por mês; cada pergunta co
 | **Total, uso típico (10 perguntas/dia)** | **≈ US$ 2** |
 | Alternativa: gerar com Haiku 5.5 também | ≈ US$ 0,50 no uso intenso |
 
-Decisão sugerida: começar com Sonnet 5.5 na geração (qualidade e tom importam muito para criança) e medir. Se a qualidade do Haiku 5.5 se mostrar suficiente na suíte de avaliação, usar Haiku para perguntas simples e Sonnet para as complexas. A escolha final do modelo é do Edison.
+**Decisão do Edison (21/11/2026): começar com Claude Haiku 5.5, esforço `medium`, na geração e nos classificadores.** Custo estimado: cerca de US$ 0,50 por criança por mês no uso intenso, e uns US$ 0,20 no uso típico, já contando os classificadores. Se a suíte de avaliação ou o dogfooding mostrarem respostas fracas em perguntas complexas, a opção é mandar só essas para o Sonnet 5.5.
 
 ### 3.5 Modelo de dados (v1)
 

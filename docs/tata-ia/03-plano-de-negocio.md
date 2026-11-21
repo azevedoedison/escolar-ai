@@ -42,10 +42,11 @@ Premissas: família com 1,5 filho em média; uso típico de 10 perguntas por dia
 
 | Cenário | Custo de IA por família/mês | Receita líquida (R$ 29,90 − 15%) | Margem bruta |
 |---|---|---|---|
-| Só Sonnet 5.5 na geração | ≈ R$ 16,50 | R$ 25,40 | ≈ 35% |
+| **Haiku 5.5 em tudo (decisão inicial)** | ≈ R$ 2 | R$ 25,40 | ≈ 90% |
 | Roteamento (70% Haiku 5.5, 30% Sonnet 5.5) | ≈ R$ 6,50 | R$ 25,40 | ≈ 75% |
+| Só Sonnet 5.5 na geração | ≈ R$ 16,50 | R$ 25,40 | ≈ 35% |
 
-Conclusão: o negócio só fica saudável com **roteamento de modelos e limite diário**, que estão no backlog da fase 2. Para o dogfooding e o beta, o custo total é pequeno (dezenas de reais por mês), então dá para começar com a configuração de maior qualidade e medir.
+Conclusão: com o Haiku 5.5 (decisão do Edison em 21/11/2026) o custo de IA deixa de ser um problema, e sobra espaço para levar perguntas difíceis ao Sonnet 5.5 se a qualidade pedir. O limite diário continua no backlog para proteger contra abuso.
 
 ## 7. Custos fixos iniciais (estimativa)
 
