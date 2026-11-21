@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Tatá IA",
+    "slug": "tata-ia",
+    "scheme": "tataia",
+    "version": "0.0.0",
+    "orientation": "default",
+    "web": { "bundler": "metro" },
+    "plugins": ["expo-router"]
+  }
+}

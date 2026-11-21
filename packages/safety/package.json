@@ -1,0 +1,15 @@
+{
+  "name": "@tata/safety",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": { "@tata/shared": "workspace:*" },
+  "devDependencies": { "vitest": "^3.2.4" }
+}
