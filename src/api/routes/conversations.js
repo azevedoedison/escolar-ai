@@ -7,6 +7,7 @@ import express from 'express';
 import { conversationRepository } from '../../db/repositories/conversation.js';
 import { childRepository } from '../../db/repositories/child.js';
 import { authenticateParent } from '../../auth/parent-auth.js';
+import { prisma } from '../../db/client.js';
 
 const router = express.Router();
 
@@ -22,12 +23,10 @@ router.get('/search', authenticateParent, async (req, res) => {
     }
 
     // Buscar filhos do pai
-    const children = await childRepository.findByParentId(req.parent.id);
+    const children = await childRepository.findByParentId(req.parentId);
     const childIds = children.map(c => c.id);
 
     // Buscar conversas com o texto
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -71,9 +70,6 @@ router.get('/detail/:id', authenticateParent, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
-
     const conversation = await prisma.conversation.findUnique({
       where: { id },
       include: {
@@ -81,7 +77,7 @@ router.get('/detail/:id', authenticateParent, async (req, res) => {
       },
     });
 
-    if (!conversation || conversation.child.parentId !== req.parent.id) {
+    if (!conversation || conversation.child.parentId !== req.parentId) {
       return res.status(404).json({ error: 'Conversa não encontrada' });
     }
 
@@ -103,7 +99,7 @@ router.get('/:childId', authenticateParent, async (req, res) => {
 
     // Verificar se a criança pertence ao pai
     const child = await childRepository.findById(childId);
-    if (!child || child.parentId !== req.parent.id) {
+    if (!child || child.parentId !== req.parentId) {
       return res.status(404).json({ error: 'Criança não encontrada' });
     }
 
@@ -139,7 +135,7 @@ router.get('/:childId/stats', authenticateParent, async (req, res) => {
 
     // Verificar se a criança pertence ao pai
     const child = await childRepository.findById(childId);
-    if (!child || child.parentId !== req.parent.id) {
+    if (!child || child.parentId !== req.parentId) {
       return res.status(404).json({ error: 'Criança não encontrada' });
     }
 
@@ -168,7 +164,7 @@ router.get('/:childId/blocked', authenticateParent, async (req, res) => {
 
     // Verificar se a criança pertence ao pai
     const child = await childRepository.findById(childId);
-    if (!child || child.parentId !== req.parent.id) {
+    if (!child || child.parentId !== req.parentId) {
       return res.status(404).json({ error: 'Criança não encontrada' });
     }
 
@@ -193,7 +189,9 @@ router.get('/:childId/blocked', authenticateParent, async (req, res) => {
 router.delete('/cleanup', authenticateParent, async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
-    const result = await conversationRepository.deleteOlderThan(days);
+    const children = await childRepository.findByParentId(req.parentId);
+    const childIds = children.map(c => c.id);
+    const result = await conversationRepository.deleteOlderThan(days, childIds);
 
     res.json({
       message: `${result.count} conversas antigas removidas`,
@@ -214,16 +212,13 @@ router.delete('/:id', authenticateParent, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
-
     // Verificar se a conversa pertence a um filho do pai
     const conversation = await prisma.conversation.findUnique({
       where: { id },
       include: { child: { select: { parentId: true } } },
     });
 
-    if (!conversation || conversation.child.parentId !== req.parent.id) {
+    if (!conversation || conversation.child.parentId !== req.parentId) {
       return res.status(404).json({ error: 'Conversa não encontrada' });
     }
 

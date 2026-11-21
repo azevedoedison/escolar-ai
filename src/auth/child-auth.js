@@ -4,11 +4,12 @@
  */
 
 import jwt from 'jsonwebtoken';
+import { requireSecret } from '../config/secrets.js';
 import { childRepository } from '../db/repositories/child.js';
 import { sessionRepository } from '../db/repositories/session.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret';
+const JWT_SECRET = requireSecret('JWT_SECRET', 32);
+const JWT_REFRESH_SECRET = requireSecret('JWT_REFRESH_SECRET', 32);
 const CHILD_SESSION_HOURS = parseInt(process.env.CHILD_SESSION_HOURS || '2');
 
 // ═══════════════════════════════════════════════════
@@ -67,6 +68,7 @@ function generateAccessToken(child) {
       type: 'child',
       parentId: child.parentId,
       nickname: child.nickname,
+      jti: crypto.randomUUID(),
     },
     JWT_SECRET,
     { expiresIn: `${CHILD_SESSION_HOURS}h` }

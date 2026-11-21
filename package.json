@@ -14,7 +14,8 @@
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:security": "playwright test -c playwright.security.config.js --trace off"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",

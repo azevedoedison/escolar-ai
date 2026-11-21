@@ -5,9 +5,10 @@
 
 import OpenAI from 'openai';
 import { logger } from '../utils/logger.js';
+import { requireSecret } from '../config/secrets.js';
 
 // OpenRouter (modelos gratuitos)
-const apiKey = process.env.OPENROUTER_API_KEY;
+const apiKey = requireSecret('OPENROUTER_API_KEY', 8);
 
 const openrouter = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',

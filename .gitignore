@@ -31,3 +31,7 @@ tmp/
 temp/
 .env
 coverage/
+
+# Resultados do Playwright
+test-results/
+playwright-report/

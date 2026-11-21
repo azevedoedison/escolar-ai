@@ -4,12 +4,13 @@
  */
 
 import jwt from 'jsonwebtoken';
+import { requireSecret } from '../config/secrets.js';
 import bcrypt from 'bcrypt';
 import { parentRepository } from '../db/repositories/parent.js';
 import { sessionRepository } from '../db/repositories/session.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret';
+const JWT_SECRET = requireSecret('JWT_SECRET', 32);
+const JWT_REFRESH_SECRET = requireSecret('JWT_REFRESH_SECRET', 32);
 const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '15m';
 const JWT_REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 const BCRYPT_ROUNDS = 10;
@@ -24,6 +25,8 @@ function generateAccessToken(parent) {
       sub: parent.id,
       type: 'parent',
       email: parent.email,
+      // jti: login repetido no mesmo segundo geraria o mesmo token (unique em Session.token)
+      jti: crypto.randomUUID(),
     },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES }
