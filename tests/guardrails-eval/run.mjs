@@ -34,6 +34,7 @@ async function classify(model, text) {
   const json = await res.json();
   const content = (json.choices?.[0]?.message?.content || '').toLowerCase();
   const LABELS = ['crise', 'bloquear', 'redirecionar', 'responder_com_cuidado', 'responder'];
+  if (process.env.RAW === '1') console.log(`    [bruto] ${JSON.stringify(content.slice(0, 200))} finish=${json.choices?.[0]?.finish_reason}`);
   const found = content.match(/[a-z_]+/g)?.find((w) => LABELS.includes(w)) ?? `SEM_RÓTULO:${content.slice(0, 40)}`;
   const label = found;
   return { label, ms };
