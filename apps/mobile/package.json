@@ -12,14 +12,18 @@
     "test": "echo \"sem testes no app ainda\""
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@supabase/supabase-js": "^2.119.2",
     "@tata/shared": "workspace:*",
     "expo": "~58.0.26",
     "expo-router": "~58.0.32",
     "expo-status-bar": "~58.0.5",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "react-native": "0.88.1",
     "react-native-web": "~0.21.4"
   },
-  "devDependencies": { "@types/react": "~19.3.0" }
+  "devDependencies": {
+    "@types/react": "~19.3.0"
+  }
 }
