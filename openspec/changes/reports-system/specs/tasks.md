@@ -113,7 +113,7 @@
 - [ ] Buscar todos os pais ativos
 - [ ] Gerar relatório para cada um
 - [ ] Enviar emails
-- [ ] Configurar OpenClaw cron (segundas 09:00)
+- [ ] Configurar agendamento semanal (segundas 09:00)
 - [ ] Log de sucessos/falhas
 
 ---

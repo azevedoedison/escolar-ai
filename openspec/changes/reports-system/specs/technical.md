@@ -7,7 +7,7 @@
 │                    REPORTS SYSTEM                           │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  ⏰ Cron Job (OpenClaw)                                     │
+│  ⏰ Cron Job (agendamento)                                     │
 │  │  Segundas 09:00                                          │
 │  ▼                                                          │
 │  ┌─────────────────────────────────────────────────────┐   │
@@ -159,7 +159,7 @@ checkThreshold(childId)
 
 ## 5. Cron Job
 
-### Configuração OpenClaw
+### Configuração do agendamento
 ```json
 {
   "name": "Weekly Report",
