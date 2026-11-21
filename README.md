@@ -69,3 +69,9 @@ npm run dev
 ---
 
 **Desenvolvido com ❤️ por Edison & Robert**
+
+## Hook de segredos
+
+Ative uma vez por clone, para bloquear commits com segredo literal:
+
+    git config core.hooksPath .githooks

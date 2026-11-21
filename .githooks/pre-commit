@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Bloqueia commit que adiciona segredo escrito direto no código.
+# Ativar uma vez por clone: git config core.hooksPath .githooks
+set -euo pipefail
+
+added=$(git diff --cached -U0 --no-color | grep -E '^\+[^+]' || true)
+[ -z "$added" ] && exit 0
+
+# Chave de API no formato OpenRouter / OpenAI, ou atribuição literal a variável sensível.
+pattern='sk-or-v1-[0-9a-f]{20,}|sk-[A-Za-z0-9]{32,}|(PASSWORD|SECRET|API_KEY|TOKEN)[A-Z_]*[[:space:]]*[:=][[:space:]]*["'\'']?[A-Za-z0-9/+_=-]{6,}'
+
+hits=$(printf '%s\n' "$added" | grep -E "$pattern" | grep -vE '\$\{\{|\$\(|process\.env|requireSecret|openssl|<[A-Z_]+>|placeholder|exemplo|example' || true)
+
+if [ -n "$hits" ]; then
+  echo "Commit bloqueado: possível segredo literal no diff." >&2
+  echo "Troque o valor por variável de ambiente, placeholder ou geração em tempo de execução." >&2
+  echo "Linhas afetadas (valor oculto):" >&2
+  printf '%s\n' "$hits" | sed -E 's/([:=][[:space:]]*["'\'']?)[^"'\'' ]{4,}/\1<oculto>/g' | head -5 >&2
+  echo "Se for falso positivo, ajuste o padrão em .githooks/pre-commit." >&2
+  exit 1
+fi
+exit 0
