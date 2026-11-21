@@ -33,3 +33,7 @@ Nunca coloque chaves em arquivos; use variáveis de ambiente.
 
 Migrações em `supabase/migrations/` (Postgres + RLS). Os testes de `packages/db` criam um banco temporário
 e precisam de um Postgres acessível em `DATABASE_URL` (padrão `postgres://postgres@localhost:5432/postgres`, usuário com permissão de criar bancos).
+
+## Variáveis do app
+
+`apps/mobile` lê `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY` (valores públicos do projeto Supabase) do ambiente. Não escreva valores em arquivos versionados.
