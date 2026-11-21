@@ -9,3 +9,6 @@ export interface SafetyResult {
 }
 
 export type SafetyClassifier = (text: string) => Promise<SafetyResult>;
+
+export { MAX_CHARS, createRateLimiter, preFilter } from './prefilter';
+export type { PreFilterOutcome, RateLimitOptions } from './prefilter';
