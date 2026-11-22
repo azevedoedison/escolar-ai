@@ -14,3 +14,6 @@ export { MAX_CHARS, createRateLimiter, preFilter } from './prefilter';
 export type { PreFilterOutcome, RateLimitOptions } from './prefilter';
 export { CVV, DISQUE_100, safeResponse } from './responses';
 export type { SafeResponseInput } from './responses';
+export type { ModelClient, ModelRequest } from './model';
+export { MAX_ANSWER_CHARS, OUTPUT_CATEGORIES, classifyOutput, parseOutputVerdict } from './output-classifier';
+export type { OutputCheckInput, OutputDecision, OutputVerdict } from './output-classifier';
