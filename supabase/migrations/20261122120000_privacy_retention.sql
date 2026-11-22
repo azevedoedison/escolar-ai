@@ -213,8 +213,31 @@ begin
 end
 $$;
 
--- Exclui a conta: família, filhos, aparelhos, conversas, mensagens, eventos, alertas, auditoria e os logins dos responsáveis.
--- Só o responsável dono. A confirmação é explícita.
+-- Exclui a conta de UM filho: aparelhos, sessões, códigos de pareamento, conversas, mensagens, eventos e alertas dele.
+-- A família e os outros filhos ficam. O registro fica na auditoria da família.
+create or replace function public.delete_child(p_child_id uuid, p_confirm boolean)
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+declare
+  v_family uuid := public._caller_family();
+begin
+  if p_confirm is not true then
+    raise exception 'confirmation_required' using errcode = '22023';
+  end if;
+  delete from public.child where id = p_child_id and family_id = v_family;
+  if not found then
+    raise exception 'child_not_found' using errcode = '42501';
+  end if;
+  insert into public.audit_log (family_id, actor, action, target)
+    values (v_family, auth.uid()::text, 'child_deleted', p_child_id::text);
+end
+$$;
+
+-- Exclui a conta do responsável dono. Com filhos vinculados a função recusa (children_linked):
+-- é preciso excluir primeiro as contas dos filhos. Sem filhos, apaga a família, as configurações,
+-- a auditoria e os logins dos responsáveis. A confirmação é explícita.
 create or replace function public.delete_account(p_confirm boolean)
 returns void
 language plpgsql security definer
@@ -230,6 +253,9 @@ begin
   if not exists (select 1 from public.guardian where auth_user_id = auth.uid() and role = 'owner') then
     raise exception 'owner_required' using errcode = '42501';
   end if;
+  if exists (select 1 from public.child where family_id = v_family) then
+    raise exception 'children_linked' using errcode = '23503';
+  end if;
   select array_agg(auth_user_id) into v_users from public.guardian where family_id = v_family;
   delete from public.family where id = v_family;
   delete from auth.users where id = any (v_users);
@@ -244,11 +270,13 @@ revoke all on function public.export_family_data() from public;
 revoke all on function public.audit_view(uuid) from public;
 revoke all on function public.delete_conversation(uuid) from public;
 revoke all on function public.delete_child_conversations(uuid) from public;
+revoke all on function public.delete_child(uuid, boolean) from public;
 revoke all on function public.delete_account(boolean) from public;
 grant execute on function public.set_retention_days(integer) to authenticated;
 grant execute on function public.export_family_data() to authenticated;
 grant execute on function public.audit_view(uuid) to authenticated;
 grant execute on function public.delete_conversation(uuid) to authenticated;
 grant execute on function public.delete_child_conversations(uuid) to authenticated;
+grant execute on function public.delete_child(uuid, boolean) to authenticated;
 grant execute on function public.delete_account(boolean) to authenticated;
 -- purge_* e _caller_family: só API/dono do banco (sem grant).

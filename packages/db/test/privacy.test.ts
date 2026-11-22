@@ -202,24 +202,57 @@ describe('direitos do titular', () => {
     expect(await count('family', `id = '${fam.A}'`)).toBe(1);
   });
 
-  it('excluir conta remove tudo da família e nada da outra', async () => {
-    const dev = (await q(`insert into device(child_id, platform) values ($1,'android') returning id`, [child.A])).rows[0].id;
-    await q(`insert into pairing_code(child_id, code_hash, expires_at) values ($1,'h', now() + interval '1 day')`, [child.A]);
-    const sess = (await q(`insert into child_session(device_id, child_id, token_hash, expires_at) values ($1,$2,'t1', now() + interval '1 day') returning id`, [dev, child.A])).rows[0].id;
-    const gid = (await q(`select id from guardian where family_id = $1`, [fam.A])).rows[0].id;
-    await q(`insert into guardian_mode_session(session_id, guardian_id, token_hash, expires_at) values ($1,$2,'t2', now() + interval '1 day')`, [sess, gid]);
-    await seed('A', 1, { severity: 'crisis', status: 'new' });
+  async function fullChild(k: 'A' | 'B', c: string) {
+    const dev = (await q(`insert into device(child_id, platform) values ($1,'android') returning id`, [c])).rows[0].id;
+    await q(`insert into pairing_code(child_id, code_hash, expires_at) values ($1,'h', now() + interval '1 day')`, [c]);
+    const sess = (await q(`insert into child_session(device_id, child_id, token_hash, expires_at) values ($1,$2,'t' || gen_random_uuid(), now() + interval '1 day') returning id`, [dev, c])).rows[0].id;
+    await seed(k, 1, { severity: 'crisis', status: 'new' });
+    return { dev, sess };
+  }
+  const childRows = (c: string) => Promise.all(
+    ['device', 'pairing_code', 'child_session', 'conversation', 'alert'].map((t) => count(t, `child_id = '${c}'`)),
+  );
+
+  it('excluir um filho apaga só o filho e deixa a família e o irmão', async () => {
+    const sib = (await asUserCommit(uA, (c) => c.query(`select public.create_child('Irmão',$1,'3º ano','gato','4321') as id`, [year - 9]))).rows[0].id;
+    await fullChild('A', child.A);
+    await q(`insert into conversation(child_id, title) values ($1,'do irmão')`, [sib]);
+    await expect(asUserCommit(uA, (c) => c.query(`select public.delete_child($1, false)`, [child.A]))).rejects.toThrow(/confirmation_required/);
+    await asUserCommit(uA, (c) => c.query(`select public.delete_child($1, true)`, [child.A]));
+    expect(await count('child', `id = '${child.A}'`)).toBe(0);
+    expect(await childRows(child.A)).toEqual([0, 0, 0, 0, 0]);
+    expect(await count('message', `conversation_id not in (select id from conversation)`)).toBe(0);
+    expect(await count('safety_event', `message_id not in (select id from message)`)).toBe(0);
+    expect(await count('family', `id = '${fam.A}'`)).toBe(1);
+    expect(await count('guardian', `family_id = '${fam.A}'`)).toBe(1);
+    expect(await count('child', `id = '${sib}'`)).toBe(1);
+    expect(await count('conversation', `child_id = '${sib}'`)).toBe(1);
+    expect(await count('audit_log', `family_id = '${fam.A}' and action = 'child_deleted' and target = '${child.A}'`)).toBe(1);
+    // a outra família não é tocada e não se apaga filho alheio
+    await expect(asUserCommit(uA, (c) => c.query(`select public.delete_child($1, true)`, [child.B]))).rejects.toThrow(/child_not_found/);
+    expect(await count('child', `id = '${child.B}'`)).toBe(1);
+    await asUserCommit(uA, (c) => c.query(`select public.delete_child($1, true)`, [sib]));
+  });
+
+  it('excluir conta exige confirmação', async () => {
+    await expect(asUserCommit(uA, (c) => c.query(`select public.delete_account(false)`))).rejects.toThrow(/confirmation_required/);
+    expect(await count('family', `id = '${fam.A}'`)).toBe(1);
+  });
+
+  it('responsável com filho vinculado é recusado e nada é apagado', async () => {
+    await expect(asUserCommit(uB, (c) => c.query(`select public.delete_account(true)`))).rejects.toThrow(/children_linked/);
+    expect(await count('family', `id = '${fam.B}'`)).toBe(1);
+    expect(await count('child', `id = '${child.B}'`)).toBe(1);
+    expect(await count('auth.users', `id = '${uB}'`)).toBe(1);
+  });
+
+  it('responsável sem filhos apaga a família inteira e nada da outra', async () => {
+    // A ficou sem filhos no teste anterior.
+    await q(`insert into audit_log(family_id, actor, action) values ($1,'x','y')`, [fam.A]);
     await asUserCommit(uA, (c) => c.query(`select public.delete_account(true)`));
     for (const [t, col] of [['family', 'id'], ['guardian', 'family_id'], ['child', 'family_id'], ['family_settings', 'family_id'], ['alert', 'family_id'], ['audit_log', 'family_id']] as [string, string][]) {
       expect(await count(t, `${col} = '${fam.A}'`), t).toBe(0);
     }
-    expect(await count('device', `child_id = '${child.A}'`)).toBe(0);
-    expect(await count('pairing_code', `child_id = '${child.A}'`)).toBe(0);
-    expect(await count('child_session', `child_id = '${child.A}'`)).toBe(0);
-    expect(await count('guardian_mode_session', `session_id = '${sess}'`)).toBe(0);
-    expect(await count('safety_event', `message_id not in (select id from message)`)).toBe(0);
-    expect(await count('conversation', `child_id = '${child.A}'`)).toBe(0);
-    expect(await count('message', `conversation_id not in (select id from conversation)`)).toBe(0);
     expect(await count('auth.users', `id = '${uA}'`)).toBe(0);
     expect(await count('family', `id = '${fam.B}'`)).toBe(1);
     expect(await count('child', `id = '${child.B}'`)).toBe(1);

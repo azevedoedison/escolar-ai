@@ -6,7 +6,7 @@
 ## 2. Direitos do titular
 - [x] 2.1 Exportar dados da família
 - [x] 2.2 Apagar conversas
-- [x] 2.3 Excluir conta e todos os dados
+- [x] 2.3 Excluir conta do filho (só os dados dele) e do responsável (recusada com filhos; sem filhos apaga a família)
 - [x] 2.4 Registrar em `audit_log` ver, apagar e exportar
 
 ## 3. Família
@@ -20,4 +20,4 @@
 - Migração `20261122120000_privacy_retention.sql`; funções chamadas por RPC pelo painel: `set_retention_days`, `export_family_data`, `delete_conversation`, `delete_child_conversations`, `delete_account`, `audit_view`. A rota HTTP e a tela do painel ficam com a thread do painel dos pais.
 - A limpeza (`purge_expired_all`) roda de hora em hora na API (`apps/api/src/retention.ts`). Conta como "atividade" a última mensagem da conversa.
 - Famílias já cadastradas mantêm a retenção atual, ajustada à faixa de 30 a 365; só as novas nascem com 90.
-- Excluir conta apaga a família e, em cascata, tudo o que depende dela: filhos, aparelhos, sessões, códigos de pareamento, conversas, mensagens, eventos, alertas, configurações e a trilha de auditoria da família. Sobram só dados sem vínculo pessoal (escolas e contadores de tentativa por hash, que expiram). Se a política exigir guardar um registro mínimo da exclusão, é decisão jurídica (4.1).
+- Excluir filho (`delete_child`) apaga só os dados dele. Excluir responsável (`delete_account`) é recusada com `children_linked` enquanto houver filhos; sem filhos apaga família, configurações, alertas, auditoria e o login. Sobram só dados sem vínculo pessoal (escolas e contadores de tentativa por hash, que expiram). A API/painel deve traduzir `children_linked` em mensagem ("exclua primeiro as contas dos filhos"). Guardar registro mínimo da exclusão da família é decisão jurídica (4.1).
