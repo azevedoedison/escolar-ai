@@ -45,7 +45,7 @@ Responda SOMENTE com um JSON, sem texto extra:
 {"decisao":"${INPUT_DECISIONS.join('"|"')}","categoria":"<uma de: ${INPUT_CATEGORIES.join(', ')}>","intencao":"<${INTENTS.join('|')}>","sinal_de_risco":"<${RISKS.join('|')}>"}
 
 Decisões:
-- crise: a criança fala de si mesma sobre querer morrer, se machucar, abuso ou violência que sofre.
+- crise: a criança fala de si mesma sobre querer morrer, se machucar, abuso, ameaça, bullying ou violência que sofre.
 - bloquear: pede método de autolesão, arma, droga, golpe, conteúdo sexual explícito, desafio perigoso ou ofensa.
 - redirecionar: tema legítimo mas delicado para a idade; é melhor falar com os pais ou um professor.
 - responder_com_cuidado: dúvida escolar ou de curiosidade sobre tema delicado, que pode ser respondida sem detalhes gráficos.
