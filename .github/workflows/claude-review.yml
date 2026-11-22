@@ -1,14 +1,15 @@
-name: Claude Code Review
+name: AI Code Review
 
-# Revisão automática de cada PR (aberto, atualizado ou reaberto).
-# Requer o segredo ANTHROPIC_API_KEY em Settings > Secrets and variables > Actions.
+# Revisão automática de cada PR (aberto, atualizado ou reaberto) usando o OpenRouter.
+# Requer o segredo OPENROUTER_API_KEY em Settings > Secrets and variables > Actions.
+# Opcional: variável REVIEW_MODEL (Actions > Variables) para trocar o modelo.
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
 concurrency:
-  group: claude-review-${{ github.event.pull_request.number }}
+  group: ai-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -16,44 +17,65 @@ jobs:
     # PRs vindos de forks não recebem segredos; pular para não falhar.
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
-      issues: write
-      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      REVIEW_MODEL: ${{ vars.REVIEW_MODEL || 'deepseek/deepseek-chat' }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      REPO: ${{ github.repository }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Verificar segredo
-        id: key
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Revisar o diff
         run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::warning::Segredo ANTHROPIC_API_KEY não configurado; revisão do Claude ignorada."
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=true" >> "$GITHUB_OUTPUT"
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "::warning::Segredo OPENROUTER_API_KEY não configurado; revisão ignorada."
+            exit 0
           fi
 
-      - name: Revisar com Claude
-        if: steps.key.outputs.present == 'true'
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            REPO: ${{ github.repository }}
-            PR: ${{ github.event.pull_request.number }}
+          gh pr diff "$PR_NUMBER" --repo "$REPO" | head -c 150000 > diff.txt
+          if [ ! -s diff.txt ]; then
+            echo "Diff vazio; nada a revisar."
+            exit 0
+          fi
 
-            /review
+          PROMPT="Você é um revisor de código sênior. Revise o diff abaixo de um PR de um app de IA infantil com controle parental. Responda em português do Brasil, de forma objetiva, em markdown. Aponte apenas problemas reais: bugs, falhas de segurança e privacidade (dados de crianças, segredos, autenticação), regressões e falta de testes. Cite arquivo e trecho. Se não houver problemas relevantes, diga isso em uma frase."
 
-            Responda em português do Brasil. Foque em bugs, segurança (este é um app
-            infantil com controle parental), regressões e falta de testes. Seja objetivo
-            e publique o resultado como comentário neste PR.
-          claude_args: |
-            --max-turns 10
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+          jq -n --arg model "$REVIEW_MODEL" --arg prompt "$PROMPT" --rawfile diff diff.txt \
+            '{model:$model, messages:[{role:"system",content:$prompt},{role:"user",content:$diff}]}' > req.json
+
+          HTTP=$(curl -sS -o resp.json -w '%{http_code}' https://openrouter.ai/api/v1/chat/completions \
+            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @req.json)
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::OpenRouter respondeu HTTP $HTTP"
+            exit 1
+          fi
+
+          REVIEW=$(jq -r '.choices[0].message.content // empty' resp.json)
+          if [ -z "$REVIEW" ]; then
+            echo "::error::Resposta vazia do modelo"
+            exit 1
+          fi
+
+          {
+            echo "<!-- ai-review -->"
+            echo "## Revisão automática (IA)"
+            echo
+            echo "$REVIEW"
+            echo
+            echo "---"
+            echo "_Modelo: \`$REVIEW_MODEL\` via OpenRouter. Sugestões automáticas, confirme antes de agir._"
+          } > comment.md
+
+          # Atualiza o comentário anterior se existir; senão cria um novo.
+          ID=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
+            --jq '[.[] | select(.body | startswith("<!-- ai-review -->"))] | last | .id // empty')
+          if [ -n "$ID" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$ID" -F body=@comment.md > /dev/null
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file comment.md
+          fi
