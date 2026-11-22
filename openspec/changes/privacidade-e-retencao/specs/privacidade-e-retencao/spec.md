@@ -27,12 +27,20 @@ O responsável SHALL poder exportar os dados da própria família pelo painel.
 - **WHEN** o responsável pede a exportação
 - **THEN** recebe um arquivo com filhos, conversas e eventos da própria família e o ato é registrado em `audit_log`
 
-### Requirement: Apagar conversas e excluir conta
-O responsável SHALL poder apagar conversas e excluir a conta. Excluir a conta SHALL remover todos os dados da família.
+### Requirement: Apagar conversas e excluir contas
+O responsável SHALL poder apagar conversas, excluir a conta de um filho e excluir a própria conta. Excluir um filho SHALL remover só os dados dele. Excluir a conta do responsável SHALL ser recusada enquanto houver filhos vinculados; sem filhos, SHALL remover a família e todos os seus dados.
 
-#### Scenario: Exclusão de conta
-- **WHEN** o responsável confirma a exclusão da conta
-- **THEN** família, filhos, aparelhos, conversas, mensagens, eventos e alertas são removidos
+#### Scenario: Exclusão de filho
+- **WHEN** o responsável confirma a exclusão de um filho
+- **THEN** aparelhos, sessões, códigos de pareamento, conversas, mensagens, eventos e alertas dele são removidos, a família e os outros filhos ficam e o ato é registrado em `audit_log`
+
+#### Scenario: Responsável com filhos
+- **WHEN** o responsável pede a exclusão da própria conta e há filhos vinculados
+- **THEN** a exclusão é recusada (`children_linked`), nada é apagado, e a mensagem orienta a excluir primeiro as contas dos filhos
+
+#### Scenario: Responsável sem filhos
+- **WHEN** o responsável sem filhos confirma a exclusão da conta
+- **THEN** família, configurações, alertas, auditoria e o login do responsável são removidos
 
 ### Requirement: Trilha de auditoria
 O sistema SHALL registrar em `audit_log` quem viu, apagou ou exportou dados de criança.
