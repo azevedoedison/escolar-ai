@@ -2,12 +2,15 @@ import { Hono, type Context } from 'hono';
 import { isPairingCode, parseChildLogin, PLATFORMS, type Platform } from '@tata/shared';
 import { signToken } from './auth';
 import { createChatRoutes, type ChatDeps } from './chat';
+import type { GoogleAuth } from './google';
 import type { AuthStore, Status } from './pairing-store';
 
 /** Pareamento e login. `tokenSecret` é o mesmo do chat (CHILD_TOKEN_SECRET). */
 export interface AuthDeps {
   store: AuthStore;
   tokenSecret: string;
+  /** Login com Google. Ausente: o botão fica desligado e a rota responde 404. */
+  google?: GoogleAuth | null;
   now?: () => number;
 }
 
@@ -43,7 +46,7 @@ async function json(c: Context): Promise<unknown> {
   }
 }
 
-export function createAuthRoutes({ store, tokenSecret, now = Date.now }: AuthDeps) {
+export function createAuthRoutes({ store, tokenSecret, google = null, now = Date.now }: AuthDeps) {
   const app = new Hono();
 
   /** Emite o token assinado do chat a partir de uma sessão opaca ainda válida. */
@@ -64,6 +67,13 @@ export function createAuthRoutes({ store, tokenSecret, now = Date.now }: AuthDep
     return c.json({ deviceToken: r.deviceToken, deviceId: r.deviceId, childId: r.childId });
   });
 
+  async function sessionResponse(c: Context, r: { status: Status; sessionToken?: string; expiresAt?: string }) {
+    if (r.status !== 'ok' || !r.sessionToken) return fail(c, r.status === 'ok' ? 'unauthorized' : r.status);
+    const t = await chatToken(r.sessionToken);
+    if (!t) return fail(c, 'unauthorized');
+    return c.json({ sessionToken: r.sessionToken, sessionExpiresAt: r.expiresAt, token: t.token, tokenExp: t.exp, age: t.age });
+  }
+
   // M-04: login da criança no aparelho pareado (Bearer = token do aparelho).
   app.post('/child/login', async (c) => {
     const deviceToken = bearer(c);
@@ -73,10 +83,24 @@ export function createAuthRoutes({ store, tokenSecret, now = Date.now }: AuthDep
       'pin' in body
         ? await store.childLogin(deviceToken, null, body.pin)
         : await store.childLogin(deviceToken, body.email, body.password);
-    if (r.status !== 'ok' || !r.sessionToken) return fail(c, r.status === 'ok' ? 'unauthorized' : r.status);
-    const t = await chatToken(r.sessionToken);
-    if (!t) return fail(c, 'unauthorized');
-    return c.json({ sessionToken: r.sessionToken, sessionExpiresAt: r.expiresAt, token: t.token, tokenExp: t.exp, age: t.age });
+    return sessionResponse(c, r);
+  });
+
+  // Login com Google: o app diz se o botão aparece. Sem credenciais no ambiente, fica desligado.
+  app.get('/child/google/config', (c) => c.json(google ? { enabled: true, clientId: google.clientId } : { enabled: false }));
+
+  // Login com Google (Bearer = token do aparelho): troca o código OAuth pela identidade e abre a sessão.
+  app.post('/child/login/google', async (c) => {
+    if (!google) return c.json({ error: 'disabled', message: 'Entrar com Google não está disponível.' }, 404);
+    const deviceToken = bearer(c);
+    const b = (await json(c)) as { code?: unknown; codeVerifier?: unknown; redirectUri?: unknown } | null;
+    if (!deviceToken || !b || typeof b.code !== 'string' || typeof b.codeVerifier !== 'string' || typeof b.redirectUri !== 'string' || !b.code || !b.codeVerifier) {
+      return fail(c, 'bad_request');
+    }
+    const id = await google.exchange(b.code, b.codeVerifier, b.redirectUri);
+    // Falha na troca com o Google não conta no bloqueio: a criança não errou nada, só o código expirou.
+    if (!id) return fail(c, 'invalid');
+    return sessionResponse(c, await store.childLoginGoogle(deviceToken, id.sub, id.email));
   });
 
   // Renova o token do chat. Aparelho revogado ou sessão vencida: 401.

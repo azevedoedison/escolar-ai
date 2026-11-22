@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from './app';
+import { createGoogleAuth } from './google';
 import { createPairingStore } from './pairing-store';
 import { createPgStore } from './store';
 
@@ -16,6 +17,16 @@ let pool: pg.Pool;
 let app: ReturnType<typeof createApp>;
 let childId: string;
 let familyId: string;
+const GOOGLE_CFG = { clientId: 'cid.apps.googleusercontent.com', clientSecret: 'x', redirectUris: ['tata://auth'] };
+const idToken = (c: object) => `h.${Buffer.from(JSON.stringify(c)).toString('base64url')}.s`;
+/** Google de mentira: o código "ana" devolve a conta da Ana; "intruso" devolve outra conta. */
+const fakeGoogle = (async (_url: unknown, init?: { body?: URLSearchParams }) => {
+  const code = init?.body?.get('code');
+  const who = code === 'ana' ? { sub: 'g-ana', email: 'ana@gmail.com' } : code === 'intruso' ? { sub: 'g-x', email: 'intruso@gmail.com' } : null;
+  if (!who) return new Response('{}', { status: 400 });
+  const claims = { iss: 'https://accounts.google.com', aud: GOOGLE_CFG.clientId, exp: Math.floor(Date.now() / 1000) + 3600, email_verified: true, ...who };
+  return new Response(JSON.stringify({ id_token: idToken(claims) }));
+}) as unknown as typeof fetch;
 const guardianUser = '00000000-0000-0000-0000-0000000000a1';
 
 const post = (path: string, body: unknown, token?: string, extra: Record<string, string> = {}) =>
@@ -58,7 +69,7 @@ beforeAll(async () => {
             : '{"decisao":"allow","categoria":"nenhuma","motivo":"ok"}',
       },
     },
-    { store: createPairingStore(pool), tokenSecret: SECRET },
+    { store: createPairingStore(pool), tokenSecret: SECRET, google: createGoogleAuth(GOOGLE_CFG, fakeGoogle) },
   );
 });
 
@@ -117,5 +128,21 @@ describe('pareamento -> login -> chat', () => {
     const code = await pair();
     expect((await post('/pairing/redeem', { code, platform: 'web' }, undefined, { 'x-forwarded-for': '9.9.9.9' })).status).toBe(200);
     expect((await post('/pairing/redeem', { code, platform: 'web' }, undefined, { 'x-forwarded-for': '9.9.9.9' })).status).toBe(401);
+  });
+});
+
+describe('login com Google -> chat', () => {
+  it('conta vinculada pelo responsável entra, o token abre o /chat; conta estranha não', async () => {
+    await asGuardian((c) => c.query(`select public.set_child_google($1,'Ana@Gmail.com')`, [childId]));
+    const { deviceToken } = await (await post('/pairing/redeem', { code: await pair(), platform: 'ios' }, undefined, { 'x-forwarded-for': '8.8.8.8' })).json();
+    await pool.query('delete from attempt_counter');
+    const body = (code: string) => ({ code, codeVerifier: 'v', redirectUri: 'tata://auth' });
+
+    expect((await post('/child/login/google', body('intruso'), deviceToken)).status).toBe(401);
+    const ok = await post('/child/login/google', body('ana'), deviceToken);
+    expect(ok.status).toBe(200);
+    const { token, age } = await ok.json();
+    expect(age).toBe(11);
+    expect((await post('/chat', { message: 'oi' }, token)).status).toBe(200);
   });
 });
