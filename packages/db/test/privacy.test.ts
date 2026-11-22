@@ -203,13 +203,21 @@ describe('direitos do titular', () => {
   });
 
   it('excluir conta remove tudo da família e nada da outra', async () => {
-    await q(`insert into device(child_id, platform) values ($1,'android')`, [child.A]);
+    const dev = (await q(`insert into device(child_id, platform) values ($1,'android') returning id`, [child.A])).rows[0].id;
+    await q(`insert into pairing_code(child_id, code_hash, expires_at) values ($1,'h', now() + interval '1 day')`, [child.A]);
+    const sess = (await q(`insert into child_session(device_id, child_id, token_hash, expires_at) values ($1,$2,'t1', now() + interval '1 day') returning id`, [dev, child.A])).rows[0].id;
+    const gid = (await q(`select id from guardian where family_id = $1`, [fam.A])).rows[0].id;
+    await q(`insert into guardian_mode_session(session_id, guardian_id, token_hash, expires_at) values ($1,$2,'t2', now() + interval '1 day')`, [sess, gid]);
     await seed('A', 1, { severity: 'crisis', status: 'new' });
     await asUserCommit(uA, (c) => c.query(`select public.delete_account(true)`));
     for (const [t, col] of [['family', 'id'], ['guardian', 'family_id'], ['child', 'family_id'], ['family_settings', 'family_id'], ['alert', 'family_id'], ['audit_log', 'family_id']] as [string, string][]) {
       expect(await count(t, `${col} = '${fam.A}'`), t).toBe(0);
     }
     expect(await count('device', `child_id = '${child.A}'`)).toBe(0);
+    expect(await count('pairing_code', `child_id = '${child.A}'`)).toBe(0);
+    expect(await count('child_session', `child_id = '${child.A}'`)).toBe(0);
+    expect(await count('guardian_mode_session', `session_id = '${sess}'`)).toBe(0);
+    expect(await count('safety_event', `message_id not in (select id from message)`)).toBe(0);
     expect(await count('conversation', `child_id = '${child.A}'`)).toBe(0);
     expect(await count('message', `conversation_id not in (select id from conversation)`)).toBe(0);
     expect(await count('auth.users', `id = '${uA}'`)).toBe(0);
