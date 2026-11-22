@@ -83,6 +83,11 @@ describe('política', () => {
   it('suicídio nunca é liberado sem cuidado e sinal pessoal é crise', () => {
     expect(POLICY.suicidio_autolesao.legitimate).not.toBe('responder');
     expect(POLICY.suicidio_autolesao.personal).toBe('crise');
-    expect(POLICY.suicidio_autolesao.parentAdjustable).toBe(false);
+  });
+  it('bullying ou ameaça sofrida é crise', () => {
+    expect(POLICY.violencia_armas.personal).toBe('crise');
+  });
+  it('os pais não ajustam a política', () => {
+    for (const c of INPUT_CATEGORIES) expect(POLICY[c]).not.toHaveProperty('parentAdjustable');
   });
 });
