@@ -1,0 +1,30 @@
+schema: spec-driven
+
+context: |
+  Produto: Tatá IA (antes Escolar AI). Assistente de IA em português para crianças de 9 a 13 anos
+  (primeira usuária: 11 anos), para escola e curiosidades, com guardrails de conteúdo sensível,
+  login separado para responsáveis e filhos e painel de supervisão com histórico e alertas.
+  Plataformas: celular, tablet e web a partir de uma base de código.
+  Stack: monorepo pnpm + Turborepo; apps/mobile (Expo, React Native, Expo Router); apps/api (Hono,
+  Node 22, TypeScript, Zod); packages/shared; packages/safety (política, prompts, classificadores,
+  suíte de avaliação); packages/db (testes de banco); supabase/ (Postgres e Auth, região São Paulo, RLS).
+  IA: Claude Haiku 5.5, esforço medium, na geração e nos classificadores. Sonnet 5.5 só se a qualidade pedir.
+  Princípios: segurança da criança antes da utilidade, sem bloqueio burro; tudo que importa acontece no
+  servidor; transparência com a criança (ela sabe que os pais veem); privacidade por padrão (LGPD art. 14,
+  ECA Digital), sem anúncios; simples de operar por uma pessoa.
+  Código antigo em legacy/: só consulta, não editar nem importar.
+  Contexto detalhado em openspec/project/. Tarefas de execução no Linear (time TAT).
+
+rules:
+  proposal:
+    - Escrever em português do Brasil.
+    - Citar os IDs do backlog (M-xx, B-xx, L-xx) e a seção da arquitetura que a change toca.
+  specs:
+    - Escrever em português do Brasil. Manter as palavras SHALL, WHEN e THEN do formato.
+    - Toda tabela com dados de família exige RLS e teste de isolamento.
+    - Nenhum caso de teste usa dado real de criança.
+  design:
+    - Registrar decisões de segurança, privacidade e custo de IA.
+  tasks:
+    - Mudança em packages/safety ou no prompt exige rodar a suíte de avaliação.
+    - Falhas de segurança viram caso de teste antes da correção.
