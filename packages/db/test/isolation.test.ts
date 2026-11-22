@@ -134,7 +134,7 @@ describe('catálogo: nada novo escapa da proteção', () => {
              (select count(*)::int from pg_policy p where p.polrelid = c.oid) as policies
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'r'`);
-    expect(rows.length).toBeGreaterThanOrEqual(10);
+    expect(rows.length).toBeGreaterThanOrEqual(11);
     expect(rows.filter((r) => !r.relrowsecurity || r.policies === 0)).toEqual([]);
   });
 
