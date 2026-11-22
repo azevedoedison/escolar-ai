@@ -76,3 +76,20 @@ export async function enterGuardianMode(email: string, password: string): Promis
   const r = await call<{ modeToken: string }>('/guardian-mode/enter', { email, password }, token);
   return r.ok ? null : r.message;
 }
+
+const GUARDIAN_KEY = 'tata.guardianToken';
+export const getGuardianToken = () => AsyncStorage.getItem(GUARDIAN_KEY);
+
+/** Login direto do responsável na API (painel dos pais), com a mesma conta do cadastro. Devolve o erro, se houver. */
+export async function guardianLogin(email: string, password: string): Promise<string | null> {
+  const r = await call<{ token: string }>('/guardian/login', { email, password });
+  if (!r.ok) return r.message;
+  await AsyncStorage.setItem(GUARDIAN_KEY, r.data.token);
+  return null;
+}
+
+export async function guardianLogout(): Promise<void> {
+  const token = await getGuardianToken();
+  if (token) await call('/guardian/logout', {}, token);
+  await AsyncStorage.removeItem(GUARDIAN_KEY);
+}

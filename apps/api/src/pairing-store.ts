@@ -10,6 +10,11 @@ export interface AuthStore {
   guardianModeEnter(sessionToken: string, email: string, password: string): Promise<{ status: Status; modeToken?: string; expiresAt?: string }>;
   verifyGuardianMode(token: string): Promise<{ guardianId: string; familyId: string } | null>;
   guardianModeExit(token: string): Promise<void>;
+  /** Login direto do responsável (e-mail e senha), sem aparelho da criança. */
+  guardianLogin(email: string, password: string): Promise<{ status: Status; token?: string; expiresAt?: string }>;
+  /** Responsável por login direto OU por modo Responsável: o painel aceita os dois. */
+  verifyGuardian(token: string): Promise<{ guardianId: string; familyId: string } | null>;
+  guardianLogout(token: string): Promise<void>;
 }
 
 /** Implementação sobre as funções SQL da migração de pareamento. Toda regra e todo contador ficam no banco. */
@@ -42,6 +47,17 @@ export function createPairingStore(pool: pg.Pool): AuthStore {
     },
     async guardianModeExit(token) {
       await q('select public.guardian_mode_exit($1)', [token]);
+    },
+    async guardianLogin(email, password) {
+      const [r] = await q('select * from public.guardian_login($1,$2)', [email, password]);
+      return { status: r.status, token: r.token ?? undefined, expiresAt: iso(r.expires_at) };
+    },
+    async verifyGuardian(token) {
+      const [r] = await q('select * from public.verify_guardian($1)', [token]);
+      return r ? { guardianId: r.guardian_id, familyId: r.family_id } : null;
+    },
+    async guardianLogout(token) {
+      await q('select public.guardian_logout($1)', [token]);
     },
   };
 }

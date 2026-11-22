@@ -104,6 +104,21 @@ export function createAuthRoutes({ store, tokenSecret, now = Date.now }: AuthDep
     return c.json({ modeToken: r.modeToken, expiresAt: r.expiresAt });
   });
 
+  // Login direto do responsável: conta própria, qualquer aparelho. Falha igual para e-mail desconhecido e senha errada.
+  app.post('/guardian/login', async (c) => {
+    const b = (await json(c)) as { email?: unknown; password?: unknown } | null;
+    if (!b || typeof b.email !== 'string' || typeof b.password !== 'string') return fail(c, 'bad_request');
+    const r = await store.guardianLogin(b.email, b.password);
+    if (r.status !== 'ok' || !r.token) return fail(c, r.status === 'ok' ? 'unauthorized' : r.status);
+    return c.json({ token: r.token, expiresAt: r.expiresAt });
+  });
+
+  app.post('/guardian/logout', async (c) => {
+    const token = bearer(c);
+    if (token) await store.guardianLogout(token);
+    return c.body(null, 204);
+  });
+
   app.post('/guardian-mode/exit', async (c) => {
     const token = bearer(c);
     if (token) await store.guardianModeExit(token);

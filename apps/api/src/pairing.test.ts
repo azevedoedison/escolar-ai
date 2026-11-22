@@ -15,6 +15,9 @@ function fakeStore(over: Partial<AuthStore> = {}): AuthStore {
     guardianModeEnter: vi.fn(async () => ({ status: 'ok' as const, modeToken: 'mt', expiresAt: '2026-01-01T00:15:00.000Z' })),
     verifyGuardianMode: vi.fn(async () => null),
     guardianModeExit: vi.fn(async () => {}),
+    guardianLogin: vi.fn(async () => ({ status: 'ok' as const, token: 'gt', expiresAt: '2026-01-08T00:00:00.000Z' })),
+    verifyGuardian: vi.fn(async () => null),
+    guardianLogout: vi.fn(async () => {}),
     ...over,
   };
 }
@@ -115,5 +118,35 @@ describe('sessão da criança e modo Responsável', () => {
   });
   it('sem banco configurado, as rotas não existem', async () => {
     expect((await createApp().request('/child/token', { method: 'POST' })).status).toBe(404);
+  });
+});
+
+describe('login direto do responsável', () => {
+  it('e-mail e senha devolvem o token do painel', async () => {
+    const store = fakeStore();
+    const res = await post(mk(store), '/guardian/login', { email: 'pai@exemplo.com', password: 'senha' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ token: 'gt', expiresAt: '2026-01-08T00:00:00.000Z' });
+    expect(store.guardianLogin).toHaveBeenCalledWith('pai@exemplo.com', 'senha');
+  });
+  it('corpo ruim → 400 sem consultar o banco', async () => {
+    const store = fakeStore();
+    for (const b of [{}, { email: 'a@b.com' }, { email: 1, password: 'x' }]) {
+      expect((await post(mk(store), '/guardian/login', b)).status).toBe(400);
+    }
+    expect(store.guardianLogin).not.toHaveBeenCalled();
+  });
+  it('dados errados → 401 com a mesma mensagem, bloqueio → 429', async () => {
+    const bad = await post(mk(fakeStore({ guardianLogin: async () => ({ status: 'invalid' }) })), '/guardian/login', { email: 'x@y.com', password: 'z' });
+    expect(bad.status).toBe(401);
+    expect((await bad.json()).error).toBe('invalid');
+    const locked = await post(mk(fakeStore({ guardianLogin: async () => ({ status: 'locked' }) })), '/guardian/login', { email: 'x@y.com', password: 'z' });
+    expect(locked.status).toBe(429);
+  });
+  it('sair revoga a sessão e responde 204', async () => {
+    const store = fakeStore();
+    const res = await post(mk(store), '/guardian/logout', {}, { authorization: 'Bearer gt' });
+    expect(res.status).toBe(204);
+    expect(store.guardianLogout).toHaveBeenCalledWith('gt');
   });
 });
