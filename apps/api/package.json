@@ -14,7 +14,7 @@
     "@tata/shared": "workspace:*",
     "hono": "^4.13.0",
     "@tata/safety": "workspace:*",
-    "pg": "^8.16.0"
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
