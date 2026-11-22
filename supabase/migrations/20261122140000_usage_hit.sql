@@ -10,3 +10,4 @@ create index usage_hit_child_at_idx on public.usage_hit(child_id, at desc);
 
 alter table public.usage_hit enable row level security;
 revoke all on public.usage_hit from anon, authenticated;
+create policy api_only on public.usage_hit for all to authenticated using (false) with check (false);
