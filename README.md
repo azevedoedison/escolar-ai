@@ -37,3 +37,26 @@ e precisam de um Postgres acessível em `DATABASE_URL` (padrão `postgres://post
 ## Variáveis do app
 
 `apps/mobile` lê `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY` (valores públicos do projeto Supabase) do ambiente. Não escreva valores em arquivos versionados.
+
+## Login da criança com Google (opcional)
+
+O botão "Entrar com Google" só aparece quando a API tem as três variáveis abaixo. Sem elas, ele fica desligado
+(`GET /child/google/config` devolve `enabled: false`) e o PIN e o e-mail e senha seguem funcionando.
+
+| Variável | Onde | Valor |
+|---|---|---|
+| `GOOGLE_CLIENT_ID` | API | ID do cliente OAuth |
+| `GOOGLE_CLIENT_SECRET` | API | Segredo do cliente OAuth (nunca vai para o app nem para arquivos) |
+| `GOOGLE_REDIRECT_URIS` | API | Redirecionamentos permitidos, separados por vírgula. Para o app: `tataia://google` |
+| `EXPO_PUBLIC_GOOGLE_REDIRECT_URI` | app | Opcional. Sobrescreve o redirecionamento padrão `tataia://google` (esquema `tataia` em `apps/mobile/app.json`). Precisa estar em `GOOGLE_REDIRECT_URIS` |
+
+Passo a passo no Google Cloud:
+
+1. Em [console.cloud.google.com](https://console.cloud.google.com), crie ou escolha um projeto.
+2. **APIs e serviços › Tela de consentimento OAuth**: configure o app (nome Tatá IA) e adicione os escopos `openid` e `email`. Em teste, inclua as contas Google de teste.
+3. **APIs e serviços › Credenciais › Criar credenciais › ID do cliente OAuth**, tipo **Aplicativo da Web**.
+4. Em **URIs de redirecionamento autorizados**, informe o mesmo valor de `GOOGLE_REDIRECT_URIS`. Se o Google recusar o esquema `tataia://`, use um endereço `https` seu que redirecione para o app e coloque-o nas duas variáveis.
+5. Copie o ID e o segredo para o ambiente da API (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
+6. No app, o responsável informa o e-mail Google do filho; só essa conta entra, e só em aparelho já pareado.
+
+Detalhes e decisões em `openspec/changes/login-google-crianca/design.md`.
