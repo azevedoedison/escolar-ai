@@ -4,6 +4,7 @@ import { createApp } from './app';
 import { createAnthropic } from './anthropic';
 import { createPgStore } from './store';
 import { createPairingStore } from './pairing-store';
+import { startRetentionJob } from './retention';
 
 // Tudo sensível vem do ambiente: nenhuma chave fica em arquivo.
 function need(name: string): string {
@@ -23,6 +24,8 @@ const app = createApp(
   },
   { store: createPairingStore(pool), tokenSecret: need('CHILD_TOKEN_SECRET') },
 );
+
+startRetentionJob(pool);
 
 const port = Number(process.env.PORT ?? 3000);
 serve({ fetch: app.fetch, port });
