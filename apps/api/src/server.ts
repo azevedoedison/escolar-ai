@@ -5,6 +5,7 @@ import { createAnthropic } from './anthropic';
 import { createPgStore } from './store';
 import { createPairingStore } from './pairing-store';
 import { startRetentionJob } from './retention';
+import { createSimulatedMailer, startOutboxJob } from './mailer';
 
 // Tudo sensível vem do ambiente: nenhuma chave fica em arquivo.
 function need(name: string): string {
@@ -26,6 +27,8 @@ const app = createApp(
 );
 
 startRetentionJob(pool);
+// Envio de e-mail simulado: nada sai de verdade. O provedor real entra no lugar do Mailer depois.
+startOutboxJob(pool, createSimulatedMailer({ echo: console.log, baseUrl: process.env.INVITE_BASE_URL }));
 
 const port = Number(process.env.PORT ?? 3000);
 serve({ fetch: app.fetch, port });

@@ -57,8 +57,24 @@ O sistema SHALL coletar apenas apelido, ano de nascimento e série opcional da c
 - **THEN** o formulário não pede nome completo, escola nem cidade
 
 ### Requirement: Segundo responsável
-O responsável dono da família SHALL poder convidar um segundo responsável por e-mail, com acesso às mesmas informações da família.
+O responsável dono da família SHALL poder convidar um segundo responsável por e-mail, com acesso às mesmas informações da família. A família SHALL ter no máximo 2 responsáveis. O convite SHALL expirar em 7 dias, poder ser revogado pelo dono e ser aceito só por quem tem o e-mail convidado. Cada passo (criar, revogar, aceitar) SHALL ficar em `audit_log`. O segundo responsável SHALL NOT convidar, revogar convites nem excluir a conta da família.
 
 #### Scenario: Convite aceito
 - **WHEN** o convidado aceita
-- **THEN** passa a ver os filhos da família e nenhuma outra
+- **THEN** passa a ver os filhos da família e nenhuma outra, sem criar outra família
+
+#### Scenario: Convite expirado
+- **WHEN** o convidado tenta aceitar depois de 7 dias
+- **THEN** o aceite é recusado (`invite_expired`) e o dono pode convidar de novo
+
+#### Scenario: Convite revogado
+- **WHEN** o dono revoga o convite antes do aceite
+- **THEN** o aceite é recusado (`invite_revoked`) e o e-mail ainda não enviado deixa a fila
+
+#### Scenario: E-mail diferente
+- **WHEN** outra pessoa usa o token do convite com um e-mail que não é o convidado
+- **THEN** o aceite é recusado (`invite_invalid`)
+
+#### Scenario: Família cheia
+- **WHEN** a família já tem 2 responsáveis, contando convites pendentes
+- **THEN** novo convite é recusado (`family_full`)
