@@ -13,7 +13,7 @@ export default function GuardianMode() {
   async function submit() {
     const err = await enterGuardianMode(email.trim(), password);
     if (err) return setError(err);
-    router.replace('/devices');
+    router.replace('/guardian');
   }
 
   return (
