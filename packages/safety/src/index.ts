@@ -12,3 +12,6 @@ export type SafetyClassifier = (text: string) => Promise<SafetyResult>;
 
 export { MAX_CHARS, createRateLimiter, preFilter } from './prefilter';
 export type { PreFilterOutcome, RateLimitOptions } from './prefilter';
+export type { ModelClient, ModelRequest } from './model';
+export { MAX_ANSWER_CHARS, OUTPUT_CATEGORIES, classifyOutput, parseOutputVerdict } from './output-classifier';
+export type { OutputCheckInput, OutputDecision, OutputVerdict } from './output-classifier';
