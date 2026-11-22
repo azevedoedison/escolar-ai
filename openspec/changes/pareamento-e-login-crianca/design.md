@@ -10,3 +10,7 @@
 
 ## Limite conhecido
 O app não impede a criança de abrir outro navegador ou outro chatbot. A mitigação é o Google Family Link / Tempo de Uso, descrita no guia para os pais (M-42).
+
+## Integração com o chat
+- `/child/login` devolve a sessão opaca (revogável, 12 h) e um token assinado de 15 min (`role child`, `sub` = criança, `fam` = família), o mesmo formato que o `/chat` já verifica (`apps/api/src/auth.ts`, `CHILD_TOKEN_SECRET`).
+- `/child/token` renova o token com a sessão. Aparelho revogado ou sessão vencida retorna 401, então uma desconexão vale no máximo 15 minutos no chat e na hora na renovação.

@@ -1,6 +1,18 @@
 import { Hono, type Context } from 'hono';
 import { isPairingCode, parseChildLogin, PLATFORMS, type Platform } from '@tata/shared';
-import type { AuthStore, Status } from './store';
+import { signToken } from './auth';
+import { createChatRoutes, type ChatDeps } from './chat';
+import type { AuthStore, Status } from './pairing-store';
+
+/** Pareamento e login. `tokenSecret` é o mesmo do chat (CHILD_TOKEN_SECRET). */
+export interface AuthDeps {
+  store: AuthStore;
+  tokenSecret: string;
+  now?: () => number;
+}
+
+/** Token de criança usado no /chat: curto de propósito, a sessão opaca é renovável e revogável. */
+export const CHILD_TOKEN_TTL_S = 15 * 60;
 
 const MESSAGES = {
   invalid: 'Dados incorretos. Confira e tente de novo.',
@@ -11,7 +23,7 @@ const MESSAGES = {
 } as const;
 
 function fail(c: Context, status: Exclude<Status, 'ok'> | 'bad_request') {
-  const http = status === 'bad_request' ? 400 : status === 'locked' ? 429 : status === 'invalid' ? 401 : 401;
+  const http = status === 'bad_request' ? 400 : status === 'locked' ? 429 : 401;
   return c.json({ error: status, message: MESSAGES[status] }, http);
 }
 
@@ -31,11 +43,16 @@ async function json(c: Context): Promise<unknown> {
   }
 }
 
-export function createApp(store?: AuthStore) {
+export function createAuthRoutes({ store, tokenSecret, now = Date.now }: AuthDeps) {
   const app = new Hono();
-  app.get('/health', (c) => c.json({ status: 'ok' }));
 
-  if (!store) return app;
+  /** Emite o token assinado do chat a partir de uma sessão opaca ainda válida. */
+  async function chatToken(sessionToken: string) {
+    const s = await store.verifyChildSession(sessionToken);
+    if (!s) return null;
+    const exp = Math.floor(now() / 1000) + CHILD_TOKEN_TTL_S;
+    return { token: signToken({ role: 'child', sub: s.childId, fam: s.familyId, exp }, tokenSecret), age: s.age, exp };
+  }
 
   // M-04: o aparelho troca o código de 6 dígitos pelo token do aparelho.
   app.post('/pairing/redeem', async (c) => {
@@ -43,28 +60,31 @@ export function createApp(store?: AuthStore) {
     if (!b || !isPairingCode(b.code) || !PLATFORMS.includes(b.platform as Platform)) return fail(c, 'bad_request');
     const label = typeof b.label === 'string' ? b.label.slice(0, 60) : null;
     const r = await store.redeemPairingCode(b.code, b.platform as string, origin(c), label);
-    if (r.status !== 'ok') return fail(c, r.status === 'invalid' ? 'invalid' : r.status);
+    if (r.status !== 'ok') return fail(c, r.status);
     return c.json({ deviceToken: r.deviceToken, deviceId: r.deviceId, childId: r.childId });
   });
 
   // M-04: login da criança no aparelho pareado (Bearer = token do aparelho).
   app.post('/child/login', async (c) => {
-    const token = bearer(c);
+    const deviceToken = bearer(c);
     const body = parseChildLogin(await json(c));
-    if (!token || !body) return fail(c, 'bad_request');
+    if (!deviceToken || !body) return fail(c, 'bad_request');
     const r =
       'pin' in body
-        ? await store.childLogin(token, null, body.pin)
-        : await store.childLogin(token, body.email, body.password);
-    if (r.status !== 'ok') return fail(c, r.status);
-    return c.json({ sessionToken: r.sessionToken, expiresAt: r.expiresAt });
+        ? await store.childLogin(deviceToken, null, body.pin)
+        : await store.childLogin(deviceToken, body.email, body.password);
+    if (r.status !== 'ok' || !r.sessionToken) return fail(c, r.status === 'ok' ? 'unauthorized' : r.status);
+    const t = await chatToken(r.sessionToken);
+    if (!t) return fail(c, 'unauthorized');
+    return c.json({ sessionToken: r.sessionToken, sessionExpiresAt: r.expiresAt, token: t.token, tokenExp: t.exp, age: t.age });
   });
 
-  app.get('/child/me', async (c) => {
-    const token = bearer(c);
-    const s = token ? await store.verifyChildSession(token) : null;
-    if (!s) return fail(c, 'unauthorized');
-    return c.json({ childId: s.childId });
+  // Renova o token do chat. Aparelho revogado ou sessão vencida: 401.
+  app.post('/child/token', async (c) => {
+    const sessionToken = bearer(c);
+    const t = sessionToken ? await chatToken(sessionToken) : null;
+    if (!t) return fail(c, 'unauthorized');
+    return c.json({ token: t.token, tokenExp: t.exp, age: t.age });
   });
 
   app.post('/child/logout', async (c) => {
@@ -90,6 +110,14 @@ export function createApp(store?: AuthStore) {
     return c.body(null, 204);
   });
 
+  return app;
+}
+
+export function createApp(chat?: ChatDeps, auth?: AuthDeps) {
+  const app = new Hono();
+  app.get('/health', (c) => c.json({ status: 'ok' }));
+  if (chat) app.route('/', createChatRoutes(chat));
+  if (auth) app.route('/', createAuthRoutes(auth));
   return app;
 }
 

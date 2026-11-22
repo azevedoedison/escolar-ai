@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setChildSession } from './child-session';
 
 const BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const KEYS = { device: 'tata.deviceToken', session: 'tata.sessionToken' } as const;
@@ -36,19 +37,36 @@ export async function pairDevice(code: string, platform: 'android' | 'ios' | 'we
 export async function childLogin(body: { pin: string } | { email: string; password: string }): Promise<string | null> {
   const token = await getDeviceToken();
   if (!token) return 'Este aparelho ainda não foi pareado.';
-  const r = await call<{ sessionToken: string }>('/child/login', body, token);
+  const r = await call<{ sessionToken: string; token: string; age: number }>('/child/login', body, token);
   if (!r.ok) {
     if (r.error === 'revoked') await AsyncStorage.removeItem(KEYS.device);
     return r.message;
   }
   await AsyncStorage.setItem(KEYS.session, r.data.sessionToken);
+  setChildSession({ token: r.data.token, age: r.data.age });
+  startRefresh(r.data.age);
   return null;
+}
+
+// O token do chat vale 15 minutos; a sessão renova a cada 10. Se o aparelho foi desconectado, a renovação falha e a sessão cai.
+let timer: ReturnType<typeof setInterval> | null = null;
+function startRefresh(age: number) {
+  if (timer) clearInterval(timer);
+  timer = setInterval(async () => {
+    const session = await getSessionToken();
+    const r = session ? await call<{ token: string }>('/child/token', {}, session) : null;
+    if (r?.ok) setChildSession({ token: r.data.token, age });
+    else if (r && !r.ok && r.error === 'unauthorized') await childLogout();
+  }, 10 * 60 * 1000);
 }
 
 export async function childLogout(): Promise<void> {
   const token = await getSessionToken();
   if (token) await call('/child/logout', {}, token);
   await AsyncStorage.removeItem(KEYS.session);
+  setChildSession(null);
+  if (timer) clearInterval(timer);
+  timer = null;
 }
 
 /** Modo Responsável no aparelho da criança: exige e-mail e senha do responsável. */

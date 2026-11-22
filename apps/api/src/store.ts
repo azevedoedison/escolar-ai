@@ -1,47 +1,116 @@
-import pg from 'pg';
+// Acesso ao histórico. O app nunca fala com o banco: tudo passa por aqui.
 
-export type Status = 'ok' | 'invalid' | 'locked' | 'revoked' | 'unauthorized';
+import type pg from 'pg';
 
-export interface AuthStore {
-  redeemPairingCode(code: string, platform: string, origin: string, label: string | null): Promise<{ status: Status; deviceId?: string; childId?: string; deviceToken?: string }>;
-  childLogin(deviceToken: string, identifier: string | null, secret: string): Promise<{ status: Status; sessionToken?: string; expiresAt?: string }>;
-  verifyChildSession(token: string): Promise<{ sessionId: string; childId: string; familyId: string; deviceId: string } | null>;
-  childLogout(token: string): Promise<void>;
-  guardianModeEnter(sessionToken: string, email: string, password: string): Promise<{ status: Status; modeToken?: string; expiresAt?: string }>;
-  verifyGuardianMode(token: string): Promise<{ guardianId: string; familyId: string } | null>;
-  guardianModeExit(token: string): Promise<void>;
+export interface ChildContext {
+  id: string;
+  familyId: string;
+  age: number;
+  grade: string | null;
+  homeworkMode: boolean;
 }
 
-/** Implementação sobre as funções SQL da migração de pareamento. Toda regra e todo contador ficam no banco. */
-export function createPgStore(pool: pg.Pool): AuthStore {
-  const q = async (sql: string, args: unknown[]) => (await pool.query(sql, args)).rows;
-  const iso = (d: unknown) => (d instanceof Date ? d.toISOString() : (d as string | undefined));
+export interface StoredMessage {
+  id: string;
+  role: 'child' | 'tata';
+  content: string;
+  createdAt: string;
+}
+
+export interface ConversationSummary {
+  id: string;
+  title: string | null;
+  startedAt: string;
+}
+
+export interface SafetyEventInput {
+  messageId: string;
+  layer: 'prefilter' | 'input' | 'output';
+  category: string;
+  decision: 'allow' | 'redirect' | 'block' | 'crisis';
+  latencyMs?: number;
+}
+
+export interface ChatStore {
+  /** Criança ativa; null se não existir. */
+  getChild(childId: string): Promise<ChildContext | null>;
+  createConversation(childId: string, title: string): Promise<string>;
+  /** true se a conversa existe e é da criança. */
+  ownsConversation(childId: string, conversationId: string): Promise<boolean>;
+  addMessage(conversationId: string, role: 'child' | 'tata', content: string): Promise<string>;
+  addSafetyEvent(e: SafetyEventInput): Promise<void>;
+  history(conversationId: string, limit: number): Promise<StoredMessage[]>;
+  /** Mais recente primeiro. */
+  listConversations(childId: string): Promise<ConversationSummary[]>;
+}
+
+const iso = (d: Date | string) => new Date(d).toISOString();
+
+export function createPgStore(pool: pg.Pool): ChatStore {
   return {
-    async redeemPairingCode(code, platform, origin, label) {
-      const [r] = await q('select * from public.redeem_pairing_code($1,$2,$3,$4)', [code, platform, origin, label]);
-      return { status: r.status, deviceId: r.device_id ?? undefined, childId: r.child_id ?? undefined, deviceToken: r.device_token ?? undefined };
+    async getChild(childId) {
+      const { rows } = await pool.query(
+        `select c.id, c.family_id, c.birth_year, c.grade, coalesce(s.homework_mode, true) as homework_mode
+           from public.child c
+           left join public.family_settings s on s.family_id = c.family_id
+          where c.id = $1 and c.active`,
+        [childId],
+      );
+      const r = rows[0];
+      if (!r) return null;
+      return {
+        id: r.id,
+        familyId: r.family_id,
+        age: new Date().getFullYear() - r.birth_year,
+        grade: r.grade,
+        homeworkMode: r.homework_mode,
+      };
     },
-    async childLogin(deviceToken, identifier, secret) {
-      const [r] = await q('select * from public.child_login($1,$2,$3)', [deviceToken, identifier, secret]);
-      return { status: r.status, sessionToken: r.session_token ?? undefined, expiresAt: iso(r.expires_at) };
+    async createConversation(childId, title) {
+      const { rows } = await pool.query(
+        `insert into public.conversation(child_id, title) values ($1, $2) returning id`,
+        [childId, title],
+      );
+      return rows[0].id;
     },
-    async verifyChildSession(token) {
-      const [r] = await q('select * from public.verify_child_session($1)', [token]);
-      return r ? { sessionId: r.session_id, childId: r.child_id, familyId: r.family_id, deviceId: r.device_id } : null;
+    async ownsConversation(childId, conversationId) {
+      const { rowCount } = await pool.query(
+        `select 1 from public.conversation where id = $1 and child_id = $2`,
+        [conversationId, childId],
+      );
+      return (rowCount ?? 0) > 0;
     },
-    async childLogout(token) {
-      await q('select public.child_logout($1)', [token]);
+    async addMessage(conversationId, role, content) {
+      const { rows } = await pool.query(
+        `insert into public.message(conversation_id, role, content) values ($1, $2, $3) returning id`,
+        [conversationId, role, content],
+      );
+      return rows[0].id;
     },
-    async guardianModeEnter(sessionToken, email, password) {
-      const [r] = await q('select * from public.guardian_mode_enter($1,$2,$3)', [sessionToken, email, password]);
-      return { status: r.status, modeToken: r.mode_token ?? undefined, expiresAt: iso(r.expires_at) };
+    async addSafetyEvent(e) {
+      await pool.query(
+        `insert into public.safety_event(message_id, layer, category, decision, latency_ms)
+         values ($1, $2, $3, $4, $5)`,
+        [e.messageId, e.layer, e.category, e.decision, e.latencyMs ?? null],
+      );
     },
-    async verifyGuardianMode(token) {
-      const [r] = await q('select * from public.verify_guardian_mode($1)', [token]);
-      return r ? { guardianId: r.guardian_id, familyId: r.family_id } : null;
+    async history(conversationId, limit) {
+      const { rows } = await pool.query(
+        `select id, role, content, created_at from (
+           select id, role, content, created_at from public.message
+            where conversation_id = $1 order by created_at desc, id desc limit $2
+         ) t order by created_at asc, id asc`,
+        [conversationId, limit],
+      );
+      return rows.map((r) => ({ id: r.id, role: r.role, content: r.content, createdAt: iso(r.created_at) }));
     },
-    async guardianModeExit(token) {
-      await q('select public.guardian_mode_exit($1)', [token]);
+    async listConversations(childId) {
+      const { rows } = await pool.query(
+        `select id, title, started_at from public.conversation
+          where child_id = $1 order by started_at desc, id desc`,
+        [childId],
+      );
+      return rows.map((r) => ({ id: r.id, title: r.title, startedAt: iso(r.started_at) }));
     },
   };
 }

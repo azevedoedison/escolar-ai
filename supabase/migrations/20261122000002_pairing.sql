@@ -308,10 +308,10 @@ $$;
 
 -- Valida a sessão da criança. Aparelho revogado ou sessão vencida: nenhuma linha (a API responde 401).
 create or replace function public.verify_child_session(p_token text)
-returns table (session_id uuid, child_id uuid, family_id uuid, device_id uuid)
+returns table (session_id uuid, child_id uuid, family_id uuid, device_id uuid, age integer)
 language sql security definer set search_path = public, extensions
 as $$
-  select s.id, s.child_id, c.family_id, s.device_id
+  select s.id, s.child_id, c.family_id, s.device_id, (extract(year from now())::int - c.birth_year)
     from public.child_session s
     join public.device d on d.id = s.device_id and d.revoked_at is null
     join public.child c on c.id = s.child_id and c.active

@@ -5,3 +5,4 @@ export const APP_NAME = 'Tatá IA';
 export * from './signup';
 export * from './child';
 export * from './pairing';
+export * from './chat';

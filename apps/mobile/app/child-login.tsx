@@ -18,7 +18,7 @@ export default function ChildLogin() {
     if (!body) return setError(usePin ? 'O PIN tem de 4 a 6 números.' : 'Informe e-mail e senha.');
     const err = await childLogin(body);
     if (err) return setError(err);
-    router.replace('/');
+    router.replace('/chat');
   }
 
   return (
