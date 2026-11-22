@@ -118,7 +118,19 @@ Depois da aprovação do Edison (F0-01), começar pela fase 0 e pelas tarefas M-
 | M-23, M-24 | spec `guardrails-saida` (feito) |
 | M-25, B-10 | change `suite-avaliacao-seguranca` |
 | M-30 a M-33, B-05, B-06 | change `painel-pais` |
-| M-40 a M-43 | change `seguranca-da-aplicacao` (M-43) e tarefas de entrega no Linear |
+| M-40 a M-42, B-09, L-02 | change `entrega-e-distribuicao` |
+| M-43 | change `seguranca-da-aplicacao` |
 | B-02, B-03, B-01 | change `privacidade-e-retencao` |
 | S6, provedor de IA | change `provedor-de-ia-com-contrato` |
-| F0-01, F0-05 a F0-07, B-04, B-07 a B-09, B-11, B-12, L-01 a L-06 | só neste backlog e no Linear, ainda sem change |
+| F0-01, F0-05, F0-07 | change `fundacao-do-projeto` |
+| F0-06 | change `identidade-da-tata` |
+| B-04 | change `rigor-por-categoria` |
+| B-07 | change `otimizacao-de-custo-de-ia` |
+| B-08 | change `horarios-sem-uso` |
+| B-11 | change `metricas-do-produto` |
+| B-12 | change `beta-fechado` |
+| L-01 | change `assinaturas-e-teste-gratis` |
+| L-03 | change `pagina-de-divulgacao` |
+| L-04 | change `streaming-por-trechos` |
+| L-05 | change `foto-do-exercicio` |
+| L-06 | change `piloto-com-escolas` |
