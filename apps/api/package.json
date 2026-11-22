@@ -12,10 +12,12 @@
   "dependencies": {
     "@hono/node-server": "^1.19.0",
     "@tata/shared": "workspace:*",
-    "hono": "^4.13.0"
+    "hono": "^4.13.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.20.0",
     "vitest": "^3.2.4"
   }

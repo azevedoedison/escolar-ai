@@ -60,7 +60,8 @@ afterAll(async () => {
 });
 
 // pin_hash não é legível pelo responsável; para `child`, seleciona só colunas liberadas.
-const sel = (t: string) => (t === 'child' ? 'id, family_id, nickname' : '*');
+const sel = (t: string) =>
+  t === 'child' ? 'id, family_id, nickname' : t === 'device' ? 'id, child_id, platform' : '*';
 const tables = [
   'family', 'guardian', 'child', 'device', 'family_settings',
   'conversation', 'message', 'safety_event', 'alert', 'audit_log',
@@ -73,8 +74,8 @@ describe('isolamento entre famílias (leitura)', () => {
       expect(rows).toHaveLength(1);
     });
     it(`${t}: responsável B vê só 1 linha, e não a de A`, async () => {
-      const a = await db.asUser(ids.userA, async (c) => (await c.query(`select ${t === 'child' ? 'id::text' : 'to_jsonb(x)::text'} as j from public.${t} x`)).rows);
-      const b = await db.asUser(ids.userB, async (c) => (await c.query(`select ${t === 'child' ? 'id::text' : 'to_jsonb(x)::text'} as j from public.${t} x`)).rows);
+      const a = await db.asUser(ids.userA, async (c) => (await c.query(`select ${t === 'child' || t === 'device' ? 'id::text' : 'to_jsonb(x)::text'} as j from public.${t} x`)).rows);
+      const b = await db.asUser(ids.userB, async (c) => (await c.query(`select ${t === 'child' || t === 'device' ? 'id::text' : 'to_jsonb(x)::text'} as j from public.${t} x`)).rows);
       expect(b).toHaveLength(1);
       expect(b[0]).not.toEqual(a[0]);
     });
