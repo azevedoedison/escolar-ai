@@ -17,3 +17,5 @@ export type { SafeResponseInput } from './responses';
 export type { ModelClient, ModelRequest } from './model';
 export { MAX_ANSWER_CHARS, OUTPUT_CATEGORIES, classifyOutput, parseOutputVerdict } from './output-classifier';
 export type { OutputCheckInput, OutputDecision, OutputVerdict } from './output-classifier';
+export { INPUT_CATEGORIES, classifyInput, parseInputVerdict } from './input-classifier';
+export type { InputCheckInput } from './input-classifier';
