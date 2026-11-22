@@ -4,7 +4,6 @@ import { Hono, type Context } from 'hono';
 import {
   classifyInput,
   classifyOutput,
-  createRateLimiter,
   preFilter,
   safeResponse,
   type ModelClient,
@@ -29,7 +28,7 @@ const owns = (store: ChatStore, childId: string, id: string) => UUID.test(id) &&
 
 export function createChatRoutes(deps: ChatDeps) {
   const routes = new Hono();
-  const limiter = createRateLimiter({ perMinute: 10, perDay: 200, now: deps.now });
+  const limits = { perMinute: 10, perDay: 200 };
 
   /** Só token de criança, de uma criança ativa da família do token. */
   async function authChild(c: Context): Promise<ChildContext | null> {
@@ -75,11 +74,10 @@ export function createChatRoutes(deps: ChatDeps) {
       let t0 = Date.now();
       const pre = preFilter(text);
       if (pre.decision === 'allow') {
-        const limited = limiter.check(child.id);
-        if (limited) {
-          record('child', 'prefilter', limited.category, limited.decision, t0);
-          decision = limited.decision;
-          answer = safeResponse({ decision: limited.decision as Exclude<SafetyDecision, 'allow'>, category: limited.category });
+        if (await deps.store.usageLimited(child.id, limits, deps.now?.() ?? Date.now())) {
+          record('child', 'prefilter', 'limite_uso', 'block', t0);
+          decision = 'block';
+          answer = safeResponse({ decision: 'block', category: 'limite_uso' });
           break run;
         }
       }

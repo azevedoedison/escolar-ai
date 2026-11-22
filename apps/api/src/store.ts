@@ -34,6 +34,11 @@ export interface SafetyEventInput {
   latencyMs?: number;
 }
 
+export interface UsageLimits {
+  perMinute: number;
+  perDay: number;
+}
+
 export interface ChatStore {
   /** Criança ativa; null se não existir. */
   getChild(childId: string): Promise<ChildContext | null>;
@@ -42,6 +47,8 @@ export interface ChatStore {
   ownsConversation(childId: string, conversationId: string): Promise<boolean>;
   addMessage(conversationId: string, role: 'child' | 'tata', content: string): Promise<string>;
   addSafetyEvent(e: SafetyEventInput): Promise<void>;
+  /** Conta uma mensagem no limite de uso. true se passou do limite (e então não conta). */
+  usageLimited(childId: string, limits: UsageLimits, nowMs: number): Promise<boolean>;
   history(conversationId: string, limit: number): Promise<StoredMessage[]>;
   /** Mais recente primeiro. */
   listConversations(childId: string): Promise<ConversationSummary[]>;
@@ -96,6 +103,36 @@ export function createPgStore(pool: pg.Pool): ChatStore {
          values ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [e.messageId, e.layer, e.category, e.intent ?? null, e.risk ?? null, e.decision, e.model ?? null, e.latencyMs ?? null],
       );
+    },
+    async usageLimited(childId, limits, nowMs) {
+      const db = await pool.connect();
+      try {
+        await db.query('begin');
+        // Serializa por criança: duas instâncias não passam juntas do limite.
+        await db.query('select pg_advisory_xact_lock(hashtext($1))', [childId]);
+        const { rows } = await db.query(
+          `select count(*) filter (where at > to_timestamp($2 / 1000.0) - interval '1 minute')::int as minute,
+                  count(*)::int as day
+             from public.usage_hit
+            where child_id = $1 and at > to_timestamp($2 / 1000.0) - interval '1 day'`,
+          [childId, nowMs],
+        );
+        const limited = rows[0].minute >= limits.perMinute || rows[0].day >= limits.perDay;
+        if (!limited) {
+          await db.query(`insert into public.usage_hit(child_id, at) values ($1, to_timestamp($2 / 1000.0))`, [childId, nowMs]);
+          await db.query(
+            `delete from public.usage_hit where child_id = $1 and at <= to_timestamp($2 / 1000.0) - interval '1 day'`,
+            [childId, nowMs],
+          );
+        }
+        await db.query('commit');
+        return limited;
+      } catch (err) {
+        await db.query('rollback').catch(() => undefined);
+        throw err;
+      } finally {
+        db.release();
+      }
     },
     async history(conversationId, limit) {
       const { rows } = await pool.query(

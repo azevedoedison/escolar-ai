@@ -12,4 +12,4 @@
 - [x] 3.2 (política `safety_event_select` já existe e é testada em packages/db) Garantir RLS: responsável só lê eventos da própria família
 
 ## 4. Limite de uso
-- [ ] 4.1 Mover o contador por minuto/dia do pré-filtro para o banco
+- [x] 4.1 Mover o contador por minuto/dia do pré-filtro para o banco

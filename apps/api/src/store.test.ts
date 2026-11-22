@@ -66,6 +66,23 @@ describe('createPgStore', () => {
     const ev = await pool.query(`select layer, decision from safety_event where message_id = $1`, [m1]);
     expect(ev.rows).toEqual([{ layer: 'input', decision: 'allow' }]);
   });
+  it('limite de uso no banco: por minuto, por dia e isolado por criança', async () => {
+    const t0 = Date.UTC(2026, 10, 22, 12, 0, 0);
+    const lim = { perMinute: 2, perDay: 3 };
+    expect(await store.usageLimited(childB, lim, t0)).toBe(false);
+    expect(await store.usageLimited(childB, lim, t0 + 1000)).toBe(false);
+    expect(await store.usageLimited(childB, lim, t0 + 2000)).toBe(true);
+    expect(await store.usageLimited(childA, lim, t0 + 2000)).toBe(false);
+    expect(await store.usageLimited(childB, lim, t0 + 61_000)).toBe(false);
+    expect(await store.usageLimited(childB, lim, t0 + 122_000)).toBe(true);
+    expect(await store.usageLimited(childB, lim, t0 + 86_400_000 + 1000)).toBe(false);
+  });
+  it('limite de uso sobrevive a nova instância da API (novo store, mesmo banco)', async () => {
+    const t0 = Date.UTC(2026, 10, 23, 12, 0, 0);
+    const lim = { perMinute: 1, perDay: 10 };
+    expect(await store.usageLimited(childA, lim, t0)).toBe(false);
+    expect(await createPgStore(pool).usageLimited(childA, lim, t0 + 1000)).toBe(true);
+  });
   it('grava intenção, risco, modelo e a decisão "care"', async () => {
     const conv = await store.createConversation(childA, 'Puberdade');
     const m = await store.addMessage(conv, 'child', 'o que é puberdade?');
