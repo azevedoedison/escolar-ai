@@ -1,6 +1,7 @@
 // Armazenamento em memória, só para testes das rotas.
 
 import { randomUUID } from 'node:crypto';
+import { createRateLimiter } from '@tata/safety';
 import type { ChatStore, ChildContext, ConversationSummary, SafetyEventInput, StoredMessage } from './store';
 
 export function createMemoryStore(children: ChildContext[]) {
@@ -8,6 +9,8 @@ export function createMemoryStore(children: ChildContext[]) {
   const msgs: (StoredMessage & { conversationId: string })[] = [];
   const events: SafetyEventInput[] = [];
   let tick = 0;
+  let clock = 0;
+  let limiter: ReturnType<typeof createRateLimiter> | undefined;
   const stamp = () => new Date(Date.UTC(2026, 10, 22, 12, 0, tick++)).toISOString();
 
   const store: ChatStore = {
@@ -29,6 +32,11 @@ export function createMemoryStore(children: ChildContext[]) {
     },
     async addSafetyEvent(e) {
       events.push(e);
+    },
+    async usageLimited(childId, limits, nowMs) {
+      limiter ??= createRateLimiter({ ...limits, now: () => clock });
+      clock = nowMs;
+      return limiter.check(childId) !== null;
     },
     async history(conversationId, limit) {
       return msgs
