@@ -9,10 +9,8 @@ export default function Layout() {
         headerTintColor: theme.colors.text,
         contentStyle: { backgroundColor: theme.colors.bg },
         headerBackTitle: 'Voltar',
+        title: 'Tatá IA',
       }}
-    >
-      <Stack.Screen name="index" options={{ title: 'Tatá IA' }} />
-      <Stack.Screen name="(auth)" options={{ title: 'Tatá IA' }} />
-    </Stack>
+    />
   );
 }

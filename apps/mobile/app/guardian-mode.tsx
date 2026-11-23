@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { enterGuardianMode } from '../lib/api';
+import { Body, Button, Card, ErrorText, Field, LinkText, Screen, Title } from '../components/ui';
 
 /** Trocar para o modo Responsável no aparelho da criança exige e-mail e senha do responsável. */
 export default function GuardianMode() {
@@ -9,20 +9,28 @@ export default function GuardianMode() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function submit() {
+    setError(null);
+    setBusy(true);
     const err = await enterGuardianMode(email.trim(), password);
+    setBusy(false);
     if (err) return setError(err);
     router.replace('/devices');
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Modo Responsável</Text>
-      <TextInput placeholder="E-mail do responsável" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-      <TextInput placeholder="Senha do responsável" secureTextEntry value={password} onChangeText={setPassword} />
-      {error ? <Text accessibilityRole="alert">{error}</Text> : null}
-      <Button title="Entrar" onPress={submit} />
-    </View>
+    <Screen>
+      <Card>
+        <Title>Modo Responsável</Title>
+        <Body>Para continuar, confirme o e-mail e a senha do responsável.</Body>
+        <Field label="E-mail do responsável" placeholder="voce@exemplo.com" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+        <Field label="Senha do responsável" placeholder="Sua senha" secureTextEntry value={password} onChangeText={setPassword} />
+        <ErrorText>{error}</ErrorText>
+        <Button title="Entrar" onPress={submit} loading={busy} />
+        <LinkText href="/child-login">Voltar para a criança</LinkText>
+      </Card>
+    </Screen>
   );
 }

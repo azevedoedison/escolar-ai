@@ -9,9 +9,9 @@
 - [x] 2.3 Links entre login, cadastro e home
 
 ## 3. Segunda etapa
-- [ ] 3.1 Cadastro de filho, pareamento, aparelhos, entrada da criança e modo responsável
-- [ ] 3.2 Chat e minhas perguntas, com o aviso dos pais em destaque
+- [x] 3.1 Cadastro de filho, pareamento, aparelhos, entrada da criança e modo responsável
+- [x] 3.2 Chat e minhas perguntas, com o aviso dos pais em destaque
 
 ## 4. Validação
 - [x] 4.1 `pnpm lint` e `pnpm typecheck` sem erro
-- [ ] 4.2 Conferir no web em 390 px e 1280 px
+- [x] 4.2 Conferir no web em 390 px e 1280 px
