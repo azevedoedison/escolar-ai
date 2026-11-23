@@ -60,8 +60,14 @@ export function createChatRoutes(deps: ChatDeps) {
     const childMessageId = await deps.store.addMessage(conversationId, 'child', text);
 
     const events: (Omit<SafetyEventInput, 'messageId'> & { target: 'child' | 'tata' })[] = [];
-    const record = (target: 'child' | 'tata', layer: SafetyEventInput['layer'], category: string, decision: SafetyDecision, t0: number) =>
-      events.push({ target, layer, category, decision, latencyMs: Date.now() - t0 });
+    const record = (
+      target: 'child' | 'tata',
+      layer: SafetyEventInput['layer'],
+      category: string,
+      decision: SafetyEventInput['decision'],
+      t0: number,
+      extra: Pick<SafetyEventInput, 'intent' | 'risk' | 'model'> = {},
+    ) => events.push({ target, layer, category, decision, latencyMs: Date.now() - t0, ...extra });
 
     let answer: string;
     let decision: SafetyDecision = 'allow';
@@ -85,8 +91,15 @@ export function createChatRoutes(deps: ChatDeps) {
       }
 
       t0 = Date.now();
-      const input = await classifyInput({ question: text, childAge: child.age }, deps.classifier);
-      record('child', 'input', input.category, input.decision, t0);
+      const input = await classifyInput(
+        { question: text, childAge: child.age, recent: history.map((m) => ({ role: m.role, content: m.content })) },
+        deps.classifier,
+      );
+      record('child', 'input', input.category, input.careful ? 'care' : input.decision, t0, {
+        intent: input.intent,
+        risk: input.risk,
+        model: deps.classifier.model ?? null,
+      });
       if (input.decision !== 'allow') {
         decision = input.decision;
         answer = safeResponse({ decision: input.decision, category: input.category });
@@ -101,6 +114,7 @@ export function createChatRoutes(deps: ChatDeps) {
             grade: child.grade,
             homeworkMode: child.homeworkMode,
             inputCategory: input.category,
+            careful: input.careful,
           }),
           [
             ...history.map((m) => ({ role: m.role === 'child' ? ('user' as const) : ('assistant' as const), content: m.content })),
@@ -115,7 +129,7 @@ export function createChatRoutes(deps: ChatDeps) {
 
       t0 = Date.now();
       const out = await classifyOutput({ question: text, answer: generated, childAge: child.age }, deps.classifier);
-      record('tata', 'output', out.category, out.decision, t0);
+      record('tata', 'output', out.category, out.decision, t0, { model: deps.classifier.model ?? null });
       if (out.decision === 'allow') {
         answer = generated;
       } else {

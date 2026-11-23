@@ -13,7 +13,7 @@ export interface SafeResponseInput {
 }
 
 // Crise com violência, abuso ou aliciamento acrescenta o Disque 100.
-const VIOLENCE_CATEGORIES = new Set(['abuso', 'violencia', 'aliciamento', 'bullying']);
+const VIOLENCE_CATEGORIES = new Set(['abuso', 'violencia', 'violencia_armas', 'aliciamento', 'bullying']);
 
 const CRISIS_BASE =
   'Obrigada por me contar isso. Eu me importo com você, e o que você está sentindo importa muito. ' +

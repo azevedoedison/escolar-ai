@@ -27,7 +27,10 @@ export interface SafetyEventInput {
   messageId: string;
   layer: 'prefilter' | 'input' | 'output';
   category: string;
-  decision: 'allow' | 'redirect' | 'block' | 'crisis';
+  decision: 'allow' | 'care' | 'redirect' | 'block' | 'crisis';
+  intent?: string | null;
+  risk?: string | null;
+  model?: string | null;
   latencyMs?: number;
 }
 
@@ -89,9 +92,9 @@ export function createPgStore(pool: pg.Pool): ChatStore {
     },
     async addSafetyEvent(e) {
       await pool.query(
-        `insert into public.safety_event(message_id, layer, category, decision, latency_ms)
-         values ($1, $2, $3, $4, $5)`,
-        [e.messageId, e.layer, e.category, e.decision, e.latencyMs ?? null],
+        `insert into public.safety_event(message_id, layer, category, intent, risk, decision, model, latency_ms)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [e.messageId, e.layer, e.category, e.intent ?? null, e.risk ?? null, e.decision, e.model ?? null, e.latencyMs ?? null],
       );
     },
     async history(conversationId, limit) {

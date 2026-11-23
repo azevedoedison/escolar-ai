@@ -16,6 +16,9 @@ describe('buildSystemPrompt', () => {
     expect(buildSystemPrompt({ ...base, homeworkMode: true })).toContain('MODO LIÇÃO DE CASA');
     expect(buildSystemPrompt(base)).not.toContain('MODO LIÇÃO DE CASA');
   });
+  it('responder com cuidado recebe o aviso mesmo sem categoria sensível', () => {
+    expect(buildSystemPrompt({ ...base, careful: true })).toContain('trate com cuidado');
+  });
   it('tema sensível recebe aviso de cuidado', () => {
     expect(buildSystemPrompt({ ...base, inputCategory: 'morte_doenca_guerra' })).toContain('morte doenca guerra');
   });

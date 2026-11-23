@@ -15,6 +15,7 @@ const betoToken = tok('child', beto.id, beto.familyId);
 function setup(opts: { input?: string; output?: string; generated?: string | Error } = {}) {
   const mem = createMemoryStore([ana, beto]);
   const calls: { system: string; turns: ChatTurn[] }[] = [];
+  const seen: { system: string; user: string }[] = [];
   const app = createApp({
     store: mem.store,
     tokenSecret: secret,
@@ -27,9 +28,11 @@ function setup(opts: { input?: string; output?: string; generated?: string | Err
       },
     },
     classifier: {
-      async complete({ system }) {
+      model: 'classificador-teste',
+      async complete({ system, user }) {
+        seen.push({ system, user });
         return system.includes('classifica a mensagem')
-          ? (opts.input ?? '{"decisao":"allow","categoria":"nenhuma"}')
+          ? (opts.input ?? '{"decisao":"responder","categoria":"nenhuma","intencao":"escolar","sinal_de_risco":"nenhum"}')
           : (opts.output ?? '{"decisao":"allow","categoria":"nenhuma","motivo":"ok"}');
       },
     },
@@ -42,7 +45,7 @@ function setup(opts: { input?: string; output?: string; generated?: string | Err
     });
   const get = (path: string, token?: string) =>
     app.request(path, { headers: token ? { authorization: `Bearer ${token}` } : {} });
-  return { mem, calls, post, get };
+  return { mem, calls, seen, post, get };
 }
 
 describe('autenticação', () => {
@@ -124,7 +127,7 @@ describe('POST /chat', () => {
     expect(mem.events[0]).toMatchObject({ layer: 'prefilter', category: 'injecao' });
   });
   it('crise na entrada mostra a resposta de acolhimento e não gera', async () => {
-    const { calls, post } = setup({ input: '{"decisao":"crisis","categoria":"suicidio_autolesao"}' });
+    const { calls, post } = setup({ input: '{"decisao":"crise","categoria":"suicidio_autolesao","intencao":"pessoal","sinal_de_risco":"crise"}' });
     const res = (await (await post({ message: 'não quero mais viver' }, anaToken)).json()) as {
       decision: string;
       message: { content: string };
@@ -132,6 +135,37 @@ describe('POST /chat', () => {
     expect(res.decision).toBe('crisis');
     expect(res.message.content).toContain('188');
     expect(calls).toHaveLength(0);
+  });
+  it('responder com cuidado gera com aviso e registra intenção, risco e modelo', async () => {
+    const { calls, mem, post } = setup({
+      input: '{"decisao":"responder_com_cuidado","categoria":"sexualidade","intencao":"curiosidade","sinal_de_risco":"baixo"}',
+    });
+    const res = (await (await post({ message: 'o que é a puberdade?' }, anaToken)).json()) as { decision: string };
+    expect(res.decision).toBe('allow');
+    expect(calls[0]?.system).toContain('sensível (sexualidade)');
+    expect(mem.events[0]).toMatchObject({
+      layer: 'input',
+      decision: 'care',
+      category: 'sexualidade',
+      intent: 'curiosidade',
+      risk: 'baixo',
+      model: 'classificador-teste',
+    });
+  });
+  it('a conversa anterior chega ao classificador de entrada', async () => {
+    const { mem, post, seen } = setup();
+    const first = (await (await post({ message: 'o que é um rio?' }, anaToken)).json()) as { conversationId: string };
+    await post({ message: 'e um lago?', conversationId: first.conversationId }, anaToken);
+    const last = seen.filter((r) => r.system.includes('classifica a mensagem')).at(-1);
+    expect(last?.user).toContain('criança: o que é um rio?');
+    expect(mem.events.filter((e) => e.layer === 'input')).toHaveLength(2);
+  });
+  it('classificador fora do ar: não gera e registra o evento', async () => {
+    const { calls, mem, post } = setup({ input: 'não sei' });
+    const res = (await (await post({ message: 'oi tata' }, anaToken)).json()) as { decision: string };
+    expect(res.decision).toBe('block');
+    expect(calls).toHaveLength(0);
+    expect(mem.events[0]).toMatchObject({ layer: 'input', category: 'classificador_indisponivel', decision: 'block' });
   });
   it('resposta barrada na saída vira resposta padrão e é registrada', async () => {
     const { mem, post } = setup({ output: '{"decisao":"block","categoria":"drogas","motivo":"x"}', generated: 'texto perigoso' });
