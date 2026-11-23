@@ -3,6 +3,7 @@ import { Button, Text, TextInput, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { validateLogin } from '@tata/shared';
 import { signIn } from '../../lib/auth';
+import { guardianLogin } from '../../lib/api';
 
 export default function Login() {
   const router = useRouter();
@@ -15,6 +16,9 @@ export default function Login() {
     if (errors.email ?? errors.password) return setError(errors.email ?? errors.password ?? null);
     const err = await signIn(email, password);
     if (err) return setError(err);
+    // A mesma conta abre o painel dos pais na API, em qualquer aparelho.
+    const apiErr = await guardianLogin(email, password);
+    if (apiErr) return setError(apiErr);
     router.replace('/');
   }
 
