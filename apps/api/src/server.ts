@@ -1,4 +1,6 @@
 import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import pg from 'pg';
 import { createApp } from './app';
 import { createOpenRouter } from './openrouter';
@@ -30,6 +32,12 @@ const app = createApp(
 startRetentionJob(pool);
 
 const port = Number(process.env.PORT ?? 3000);
-serve({ fetch: app.fetch, port });
+// O app web roda em outra origem (porta 8081); só as origens listadas podem chamar a API pelo navegador.
+const webOrigins = (process.env.WEB_ORIGINS ?? 'http://localhost:8081').split(',').map((o) => o.trim()).filter(Boolean);
+const root = new Hono();
+root.use('*', cors({ origin: webOrigins }));
+root.route('/', app);
+
+serve({ fetch: root.fetch, port });
 if (!googleCfg) console.log('Login com Google desligado: faltam GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET ou GOOGLE_REDIRECT_URIS.');
 console.log(`API ouvindo na porta ${port}`);
