@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Button } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { googleLogin, googleLoginConfig } from '../lib/api';
+import { Button } from './ui';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -30,7 +30,7 @@ function GoogleSignIn({ clientId, onDone }: { clientId: string; onDone: (error: 
     // response muda uma vez por tentativa
   }, [response]);
 
-  return <Button title="Entrar com Google" disabled={!request} onPress={() => void prompt()} />;
+  return <Button title="Entrar com Google" variant="secondary" disabled={!request} onPress={() => void prompt()} />;
 }
 
 /** Botão opcional: some por completo quando a API não tem as credenciais do Google. */

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AVATARS, validateChild, type ChildErrors } from '@tata/shared';
 import { createChild } from '../../lib/children';
+import { Body, Button, Card, Chip, ErrorText, Field, LinkText, Screen, Title } from '../../components/ui';
 
 export default function NewChild() {
   const router = useRouter();
@@ -13,34 +14,42 @@ export default function NewChild() {
   const [pin, setPin] = useState('');
   const [errors, setErrors] = useState<ChildErrors>({});
   const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function submit() {
     const input = { nickname, birthYear: Number(birthYear), grade, avatar, pin };
     const found = validateChild(input);
     setErrors(found);
+    setMessage(null);
     if (Object.keys(found).length > 0) return;
+    setBusy(true);
     const err = await createChild(input);
+    setBusy(false);
     if (err) return setMessage(err);
     router.back();
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Cadastrar filho(a)</Text>
-      <TextInput placeholder="Apelido" value={nickname} onChangeText={setNickname} />
-      {errors.nickname ? <Text>{errors.nickname}</Text> : null}
-      <TextInput placeholder="Ano de nascimento" keyboardType="number-pad" value={birthYear} onChangeText={setBirthYear} />
-      {errors.birthYear ? <Text>{errors.birthYear}</Text> : null}
-      <TextInput placeholder="Série (opcional)" value={grade} onChangeText={setGrade} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {AVATARS.map((a) => (
-          <Button key={a} title={a === avatar ? `✓ ${a}` : a} onPress={() => setAvatar(a)} />
-        ))}
-      </View>
-      <TextInput placeholder="PIN (4 a 6 números)" secureTextEntry keyboardType="number-pad" maxLength={6} value={pin} onChangeText={setPin} />
-      {errors.pin ? <Text>{errors.pin}</Text> : null}
-      {message ? <Text accessibilityRole="alert">{message}</Text> : null}
-      <Button title="Salvar" onPress={submit} />
-    </View>
+    <Screen>
+      <Card>
+        <Title>Cadastrar filho(a)</Title>
+        <Field label="Apelido" placeholder="Como a criança gosta de ser chamada" value={nickname} onChangeText={setNickname} />
+        <ErrorText>{errors.nickname}</ErrorText>
+        <Field label="Ano de nascimento" placeholder="Ex.: 2014" keyboardType="number-pad" value={birthYear} onChangeText={setBirthYear} />
+        <ErrorText>{errors.birthYear}</ErrorText>
+        <Field label="Série (opcional)" placeholder="Ex.: 6º ano" value={grade} onChangeText={setGrade} />
+        <Body>Escolha um avatar</Body>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {AVATARS.map((a) => (
+            <Chip key={a} label={a} selected={a === avatar} onPress={() => setAvatar(a)} />
+          ))}
+        </View>
+        <Field label="PIN da criança" placeholder="4 a 6 números" secureTextEntry keyboardType="number-pad" maxLength={6} value={pin} onChangeText={setPin} />
+        <ErrorText>{errors.pin}</ErrorText>
+        <ErrorText>{message}</ErrorText>
+        <Button title="Salvar" onPress={submit} loading={busy} />
+        <LinkText href="/">Voltar ao início</LinkText>
+      </Card>
+    </Screen>
   );
 }
