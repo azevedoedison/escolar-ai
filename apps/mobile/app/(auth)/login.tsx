@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { validateLogin } from '@tata/shared';
 import { signIn } from '../../lib/auth';
 import { guardianLogin } from '../../lib/api';
+import { Button, Card, ErrorText, Field, LinkText, Screen, Title } from '../../components/ui';
 
 export default function Login() {
   const router = useRouter();
@@ -23,13 +23,16 @@ export default function Login() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Entrar (responsável)</Text>
-      <TextInput placeholder="E-mail" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-      <TextInput placeholder="Senha" secureTextEntry value={password} onChangeText={setPassword} />
-      {error ? <Text accessibilityRole="alert">{error}</Text> : null}
-      <Button title="Entrar" onPress={submit} />
-      <Link href="/signup">Criar conta</Link>
-    </View>
+    <Screen>
+      <Card>
+        <Title>Entrar (responsável)</Title>
+        <Field label="E-mail" placeholder="voce@exemplo.com" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+        <Field label="Senha" placeholder="Sua senha" secureTextEntry value={password} onChangeText={setPassword} />
+        <ErrorText>{error}</ErrorText>
+        <Button title="Entrar" onPress={submit} />
+        <LinkText href="/signup">Criar conta</LinkText>
+        <LinkText href="/">Voltar ao início</LinkText>
+      </Card>
+    </Screen>
   );
 }

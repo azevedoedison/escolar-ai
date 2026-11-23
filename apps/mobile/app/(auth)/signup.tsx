@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Button, Switch, Text, TextInput, View } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { Switch, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { validateSignup, type SignupErrors } from '@tata/shared';
 import { signUp } from '../../lib/auth';
+import { Body, Button, Card, ErrorText, Field, LinkText, Screen, Title } from '../../components/ui';
 
 export default function Signup() {
   const router = useRouter();
@@ -23,25 +24,30 @@ export default function Signup() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, gap: 12, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Criar conta de responsável</Text>
-      <TextInput placeholder="Seu nome" value={name} onChangeText={setName} />
-      {errors.name ? <Text>{errors.name}</Text> : null}
-      <TextInput placeholder="E-mail" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-      {errors.email ? <Text>{errors.email}</Text> : null}
-      <TextInput placeholder="Senha (mínimo 8 caracteres)" secureTextEntry value={password} onChangeText={setPassword} />
-      {errors.password ? <Text>{errors.password}</Text> : null}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Switch value={consent} onValueChange={setConsent} />
-        <Text style={{ flex: 1 }}>
-          Sou responsável legal pela criança e concordo com o tratamento dos dados dela para o funcionamento da Tatá IA,
-          incluindo guardar as conversas para eu acompanhar.
-        </Text>
-      </View>
-      {errors.consent ? <Text>{errors.consent}</Text> : null}
-      {message ? <Text accessibilityRole="alert">{message}</Text> : null}
-      <Button title="Criar conta" onPress={submit} />
-      <Link href="/login">Já tenho conta</Link>
-    </View>
+    <Screen>
+      <Card>
+        <Title>Criar conta de responsável</Title>
+        <Field label="Seu nome" placeholder="Nome e sobrenome" value={name} onChangeText={setName} />
+        <ErrorText>{errors.name}</ErrorText>
+        <Field label="E-mail" placeholder="voce@exemplo.com" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+        <ErrorText>{errors.email}</ErrorText>
+        <Field label="Senha" placeholder="Mínimo de 8 caracteres" secureTextEntry value={password} onChangeText={setPassword} />
+        <ErrorText>{errors.password}</ErrorText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Switch value={consent} onValueChange={setConsent} />
+          <View style={{ flex: 1 }}>
+            <Body>
+              Sou responsável legal pela criança e concordo com o tratamento dos dados dela para o funcionamento da Tatá IA,
+              incluindo guardar as conversas para eu acompanhar.
+            </Body>
+          </View>
+        </View>
+        <ErrorText>{errors.consent}</ErrorText>
+        <ErrorText>{message}</ErrorText>
+        <Button title="Criar conta" onPress={submit} />
+        <LinkText href="/login">Já tenho conta</LinkText>
+        <LinkText href="/">Voltar ao início</LinkText>
+      </Card>
+    </Screen>
   );
 }
