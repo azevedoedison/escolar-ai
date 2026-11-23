@@ -11,6 +11,7 @@ function fakeStore(over: Partial<AuthStore> = {}): AuthStore {
     redeemPairingCode: vi.fn(async () => ({ status: 'ok' as const, deviceId: 'd1', childId: 'c1', deviceToken: 'dt' })),
     childLogin: vi.fn(async () => ({ status: 'ok' as const, sessionToken: 'st', expiresAt: '2026-01-01T00:00:00.000Z' })),
     verifyChildSession: vi.fn(async (t) => (t === 'st' ? { sessionId: 's', childId: 'c1', familyId: 'f1', deviceId: 'd1', age: 11 } : null)),
+    childLoginGoogle: vi.fn(async () => ({ status: 'ok' as const, sessionToken: 'st', expiresAt: '2026-01-01T00:00:00.000Z' })),
     childLogout: vi.fn(async () => {}),
     guardianModeEnter: vi.fn(async () => ({ status: 'ok' as const, modeToken: 'mt', expiresAt: '2026-01-01T00:15:00.000Z' })),
     verifyGuardianMode: vi.fn(async () => null),

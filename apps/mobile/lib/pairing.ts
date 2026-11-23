@@ -31,3 +31,10 @@ export async function setChildCredentials(childId: string, email: string, passwo
   if (!error) return null;
   return error.message.includes('email_in_use') ? 'Este e-mail já está em uso.' : 'Não foi possível salvar. Confira os dados.';
 }
+
+/** Vincula (ou, com null, desvincula) a conta Google do filho. A tela do painel dos pais chama isto. */
+export async function setChildGoogle(childId: string, email: string | null): Promise<string | null> {
+  const { error } = await supabase.rpc('set_child_google', { p_child_id: childId, p_email: email });
+  if (!error) return null;
+  return error.message.includes('email_in_use') ? 'Este e-mail Google já está vinculado a outro filho.' : 'Não foi possível salvar. Confira o e-mail.';
+}
