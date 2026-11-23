@@ -16,3 +16,9 @@ export async function listChildren() {
   const { data } = await supabase.from('child').select('id, nickname, grade, avatar, active').order('nickname');
   return data ?? [];
 }
+
+/** Exclui só os dados deste filho. Exige o login do responsável (RPC autenticado). */
+export async function deleteChild(id: string): Promise<string | null> {
+  const { error } = await supabase.rpc('delete_child', { p_child_id: id, p_confirm: true });
+  return error ? 'Não foi possível excluir. Tente de novo.' : null;
+}

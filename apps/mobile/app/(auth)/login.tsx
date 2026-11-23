@@ -30,6 +30,7 @@ export default function Login() {
         <Field label="Senha" placeholder="Sua senha" secureTextEntry value={password} onChangeText={setPassword} />
         <ErrorText>{error}</ErrorText>
         <Button title="Entrar" onPress={submit} />
+        <LinkText href="/forgot">Esqueci minha senha</LinkText>
         <LinkText href="/signup">Criar conta</LinkText>
         <LinkText href="/">Voltar ao início</LinkText>
       </Card>

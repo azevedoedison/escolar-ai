@@ -22,3 +22,13 @@ export async function signUp(input: SignupInput): Promise<string | null> {
 export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Pede o link de recuperação. A resposta é a mesma com ou sem conta (não revela quais e-mails existem). */
+export async function requestPasswordReset(email: string): Promise<string | null> {
+  const value = email.trim();
+  if (!EMAIL_RE.test(value)) return 'E-mail inválido.';
+  await supabase.auth.resetPasswordForEmail(value);
+  return null;
+}

@@ -9,8 +9,10 @@ export default function Home() {
         <Body>Escolha por onde começar.</Body>
         <LinkText href="/login">Entrar (responsável)</LinkText>
         <LinkText href="/signup">Criar conta de responsável</LinkText>
+        <LinkText href="/children">Meus filhos</LinkText>
         <LinkText href="/children/new">Cadastrar filho(a)</LinkText>
         <LinkText href="/pairing/new">Parear aparelho da criança</LinkText>
+        <LinkText href="/account">Minha conta</LinkText>
         <LinkText href="/devices">Aparelhos conectados</LinkText>
         <LinkText href="/child-login">Entrada da criança</LinkText>
         <LinkText href="/chat">Conversar com a Tatá</LinkText>
