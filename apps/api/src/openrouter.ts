@@ -3,7 +3,7 @@
 import type { ModelClient, ModelRequest } from '@tata/safety';
 import type { ChatTurn, Generator } from './anthropic';
 
-export const DEFAULT_MODEL = 'deepseek/deepseek-chat';
+export const DEFAULT_MODEL = 'z-ai/glm-5.3-flash';
 
 export function createOpenRouter(
   opts: { apiKey: string; model?: string; fetchFn?: typeof fetch },

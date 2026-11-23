@@ -36,7 +36,7 @@ e precisam de um Postgres acessível em `DATABASE_URL` (padrão `postgres://post
 
 ## Variáveis da API
 
-O chat e as buscas usam o LLM via OpenRouter (a Anthropic fica só para desenvolvimento). A API lê, só do ambiente: `OPENROUTER_API_KEY`, `DATABASE_URL`, `CHILD_TOKEN_SECRET` e, opcional, `TATA_MODEL` (padrão `deepseek/deepseek-chat`).
+O chat e as buscas usam o LLM via OpenRouter (a Anthropic fica só para desenvolvimento). A API lê, só do ambiente: `OPENROUTER_API_KEY`, `DATABASE_URL`, `CHILD_TOKEN_SECRET` e, opcional, `TATA_MODEL` (padrão `z-ai/glm-5.3-flash`).
 
 ## Variáveis do app
 

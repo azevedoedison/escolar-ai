@@ -19,6 +19,7 @@ describe('createOpenRouter', () => {
     expect(seen?.body).not.toContain('chave-de-teste');
     const body = JSON.parse(seen?.body ?? '{}');
     expect(body.model).toBe(DEFAULT_MODEL);
+    expect(DEFAULT_MODEL).toBe('z-ai/glm-5.3-flash');
     expect(body.messages[0]).toEqual({ role: 'system', content: 'sistema' });
   });
   it('usa o modelo informado', async () => {
