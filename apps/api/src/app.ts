@@ -2,6 +2,7 @@ import { Hono, type Context } from 'hono';
 import { isPairingCode, parseChildLogin, PLATFORMS, type Platform } from '@tata/shared';
 import { signToken } from './auth';
 import { createChatRoutes, type ChatDeps } from './chat';
+import { createGuardianRoutes, type GuardianDeps } from './guardian';
 import type { GoogleAuth } from './google';
 import type { AuthStore, Status } from './pairing-store';
 
@@ -152,11 +153,12 @@ export function createAuthRoutes({ store, tokenSecret, google = null, now = Date
   return app;
 }
 
-export function createApp(chat?: ChatDeps, auth?: AuthDeps) {
+export function createApp(chat?: ChatDeps, auth?: AuthDeps, guardian?: GuardianDeps) {
   const app = new Hono();
   app.get('/health', (c) => c.json({ status: 'ok' }));
   if (chat) app.route('/', createChatRoutes(chat));
   if (auth) app.route('/', createAuthRoutes(auth));
+  if (guardian) app.route('/', createGuardianRoutes(guardian));
   return app;
 }
 

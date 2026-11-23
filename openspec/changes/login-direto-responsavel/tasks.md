@@ -7,4 +7,4 @@
 - [x] 2.1 A entrada do responsável também faz o login na API
 
 ## 3. Painel dos pais
-- [ ] 3.1 Painel passa a validar com `verify_guardian` (depende do PR 22)
+- [x] 3.1 Painel passa a validar com `verify_guardian` (depende do PR 22)

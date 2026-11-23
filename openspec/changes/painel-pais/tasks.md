@@ -1,8 +1,8 @@
 ## 1. Linha do tempo e filtros
-- [ ] 1.1 Rota de histórico por filho, paginada, com dono verificado
-- [ ] 1.2 Tela da linha do tempo com etiqueta de categoria e decisão
-- [ ] 1.3 Filtros por data, só bloqueadas, só alertas; busca por texto
-- [ ] 1.4 Teste de escape: HTML enviado pela criança aparece como texto
+- [x] 1.1 Rota de histórico por filho, paginada, com dono verificado
+- [x] 1.2 Tela da linha do tempo com etiqueta de categoria e decisão
+- [x] 1.3 Filtros por data, só bloqueadas, só alertas; busca por texto
+- [x] 1.4 Teste de escape: HTML enviado pela criança aparece como texto
 
 ## 2. Alertas
 - [ ] 2.1 Regras de alerta (crise, 3 bloqueios em 24h, burla do filtro) sobre `safety_event`

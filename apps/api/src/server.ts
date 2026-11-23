@@ -5,6 +5,7 @@ import { createAnthropic } from './anthropic';
 import { createPgStore } from './store';
 import { createGoogleAuth, googleConfigFromEnv } from './google';
 import { createPairingStore } from './pairing-store';
+import { createGuardianStore } from './guardian-store';
 import { startRetentionJob } from './retention';
 
 // Tudo sensível vem do ambiente: nenhuma chave fica em arquivo.
@@ -17,6 +18,7 @@ function need(name: string): string {
 const model = createAnthropic({ apiKey: need('ANTHROPIC_API_KEY'), model: process.env.TATA_MODEL });
 const googleCfg = googleConfigFromEnv(process.env);
 const pool = new pg.Pool({ connectionString: need('DATABASE_URL') });
+const authStore = createPairingStore(pool);
 const app = createApp(
   {
     store: createPgStore(pool),
@@ -24,7 +26,8 @@ const app = createApp(
     classifier: model,
     tokenSecret: need('CHILD_TOKEN_SECRET'),
   },
-  { store: createPairingStore(pool), tokenSecret: need('CHILD_TOKEN_SECRET'), google: googleCfg ? createGoogleAuth(googleCfg) : null },
+  { store: authStore, tokenSecret: need('CHILD_TOKEN_SECRET'), google: googleCfg ? createGoogleAuth(googleCfg) : null },
+  { store: createGuardianStore(pool), auth: authStore },
 );
 
 startRetentionJob(pool);

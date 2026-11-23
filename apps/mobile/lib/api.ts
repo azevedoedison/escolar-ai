@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setChildSession } from './child-session';
+import { saveGuardianModeToken } from './guardian';
 
 const BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const KEYS = { device: 'tata.deviceToken', session: 'tata.sessionToken' } as const;
@@ -97,7 +98,9 @@ export async function enterGuardianMode(email: string, password: string): Promis
   const token = await getSessionToken();
   if (!token) return 'Entre primeiro com o seu PIN.';
   const r = await call<{ modeToken: string }>('/guardian-mode/enter', { email, password }, token);
-  return r.ok ? null : r.message;
+  if (!r.ok) return r.message;
+  await saveGuardianModeToken(r.data.modeToken);
+  return null;
 }
 
 const GUARDIAN_KEY = 'tata.guardianToken';
