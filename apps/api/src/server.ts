@@ -1,7 +1,7 @@
 import { serve } from '@hono/node-server';
 import pg from 'pg';
 import { createApp } from './app';
-import { createAnthropic } from './anthropic';
+import { createOpenRouter } from './openrouter';
 import { createPgStore } from './store';
 import { createGoogleAuth, googleConfigFromEnv } from './google';
 import { createPairingStore } from './pairing-store';
@@ -14,7 +14,7 @@ function need(name: string): string {
   return v;
 }
 
-const model = createAnthropic({ apiKey: need('ANTHROPIC_API_KEY'), model: process.env.TATA_MODEL });
+const model = createOpenRouter({ apiKey: need('OPENROUTER_API_KEY'), model: process.env.TATA_MODEL });
 const googleCfg = googleConfigFromEnv(process.env);
 const pool = new pg.Pool({ connectionString: need('DATABASE_URL') });
 const app = createApp(
