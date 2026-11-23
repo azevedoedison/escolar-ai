@@ -185,6 +185,58 @@ describe('modo Responsável', () => {
   });
 });
 
+describe('login direto do responsável', () => {
+  const lg = async (e: string, p: string) =>
+    (await db.admin.query(`select * from public.guardian_login($1,$2)`, [e, p])).rows[0];
+
+  it('entra com e-mail e senha, guarda só o hash, e sair revoga', async () => {
+    const ok = await lg('RESP.A@exemplo.com', 'senhaDoPai123');
+    expect(ok.status).toBe('ok');
+    const stored = (await db.admin.query(`select token_hash from guardian_session`)).rows.map((r) => r.token_hash);
+    expect(stored).not.toContain(ok.token);
+    const v = (await db.admin.query(`select * from public.verify_guardian_session($1)`, [ok.token])).rows[0];
+    const fam = (await db.admin.query(`select family_id from guardian where auth_user_id = $1`, [uA])).rows[0].family_id;
+    expect(v.family_id).toBe(fam);
+    // o painel aceita o token do login direto
+    expect((await db.admin.query(`select * from public.verify_guardian($1)`, [ok.token])).rowCount).toBe(1);
+    await db.admin.query(`select public.guardian_logout($1)`, [ok.token]);
+    expect((await db.admin.query(`select * from public.verify_guardian($1)`, [ok.token])).rowCount).toBe(0);
+  });
+
+  it('senha errada e e-mail desconhecido falham do mesmo jeito', async () => {
+    expect((await lg('resp.a@exemplo.com', 'errada')).status).toBe('invalid');
+    expect((await lg('ninguem@exemplo.com', 'senhaDoPai123')).status).toBe('invalid');
+    expect((await lg('', 'x')).status).toBe('invalid');
+  });
+
+  it('sessão vencida não vale', async () => {
+    const ok = await lg('resp.a@exemplo.com', 'senhaDoPai123');
+    await db.admin.query(`update guardian_session set expires_at = now() - interval '1 second'`);
+    expect((await db.admin.query(`select * from public.verify_guardian($1)`, [ok.token])).rowCount).toBe(0);
+  });
+
+  it('5 erros bloqueiam, mesmo com a senha certa; e-mail desconhecido também bloqueia', async () => {
+    for (let i = 0; i < 5; i++) expect((await lg('resp.a@exemplo.com', 'x')).status).toBe('invalid');
+    expect((await lg('resp.a@exemplo.com', 'senhaDoPai123')).status).toBe('locked');
+    for (let i = 0; i < 5; i++) await lg('fantasma@exemplo.com', 'x');
+    expect((await lg('fantasma@exemplo.com', 'x')).status).toBe('locked');
+  });
+
+  it('o token do modo Responsável também passa por verify_guardian', async () => {
+    const d = await pairedDevice();
+    const s = (await login(d.device_token, null, '123456')).session_token;
+    const m = (await db.admin.query(`select * from public.guardian_mode_enter($1,'resp.a@exemplo.com','senhaDoPai123')`, [s])).rows[0];
+    expect((await db.admin.query(`select * from public.verify_guardian($1)`, [m.mode_token])).rowCount).toBe(1);
+  });
+
+  it('registra o login na auditoria e não é acessível ao responsável autenticado', async () => {
+    await lg('resp.a@exemplo.com', 'senhaDoPai123');
+    expect((await db.admin.query(`select 1 from audit_log where action = 'guardian_login'`)).rowCount).toBeGreaterThan(0);
+    await expect(commitAs(uA, (c) => c.query(`select * from public.guardian_session`))).rejects.toThrow(/permission denied/);
+    await expect(commitAs(uA, (c) => c.query(`select * from public.guardian_login('resp.a@exemplo.com','senhaDoPai123')`))).rejects.toThrow(/permission denied/);
+  });
+});
+
 describe('aparelhos', () => {
   it('lista só os aparelhos da própria família', async () => {
     const dA = await pairedDevice(uA, childA);

@@ -3,6 +3,7 @@ import { Button, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { parseChildLogin } from '@tata/shared';
 import { childLogin } from '../lib/api';
+import GoogleButton from '../components/google-button';
 
 /** Login da criança: PIN, ou e-mail e senha definidos pelo responsável. */
 export default function ChildLogin() {
@@ -35,6 +36,12 @@ export default function ChildLogin() {
       {error ? <Text accessibilityRole="alert">{error}</Text> : null}
       <Button title="Entrar" onPress={submit} />
       <Button title={usePin ? 'Entrar com e-mail e senha' : 'Entrar com PIN'} onPress={() => setUsePin(!usePin)} />
+      <GoogleButton
+        onDone={(err) => {
+          if (err) setError(err);
+          else router.replace('/chat');
+        }}
+      />
     </View>
   );
 }

@@ -33,11 +33,9 @@ export async function pairDevice(code: string, platform: 'android' | 'ios' | 'we
   return null;
 }
 
-/** Login da criança: PIN ou e-mail e senha definidos pelo responsável. */
-export async function childLogin(body: { pin: string } | { email: string; password: string }): Promise<string | null> {
-  const token = await getDeviceToken();
-  if (!token) return 'Este aparelho ainda não foi pareado.';
-  const r = await call<{ sessionToken: string; token: string; age: number }>('/child/login', body, token);
+type SessionData = { sessionToken: string; token: string; age: number };
+
+async function openSession(r: ApiResult<SessionData>): Promise<string | null> {
   if (!r.ok) {
     if (r.error === 'revoked') await AsyncStorage.removeItem(KEYS.device);
     return r.message;
@@ -46,6 +44,31 @@ export async function childLogin(body: { pin: string } | { email: string; passwo
   setChildSession({ token: r.data.token, age: r.data.age });
   startRefresh(r.data.age);
   return null;
+}
+
+/** Login da criança: PIN ou e-mail e senha definidos pelo responsável. */
+export async function childLogin(body: { pin: string } | { email: string; password: string }): Promise<string | null> {
+  const token = await getDeviceToken();
+  if (!token) return 'Este aparelho ainda não foi pareado.';
+  return openSession(await call<SessionData>('/child/login', body, token));
+}
+
+/** O botão "Entrar com Google" só aparece quando a API tem as credenciais (GOOGLE_* no ambiente). */
+export async function googleLoginConfig(): Promise<{ clientId: string } | null> {
+  try {
+    const res = await fetch(`${BASE}/child/google/config`);
+    const j = (await res.json()) as { enabled?: boolean; clientId?: string };
+    return j.enabled && j.clientId ? { clientId: j.clientId } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Entrega à API o código OAuth do Google; a API confere a conta e abre a sessão. */
+export async function googleLogin(code: string, codeVerifier: string, redirectUri: string): Promise<string | null> {
+  const token = await getDeviceToken();
+  if (!token) return 'Este aparelho ainda não foi pareado.';
+  return openSession(await call<SessionData>('/child/login/google', { code, codeVerifier, redirectUri }, token));
 }
 
 // O token do chat vale 15 minutos; a sessão renova a cada 10. Se o aparelho foi desconectado, a renovação falha e a sessão cai.
@@ -75,4 +98,21 @@ export async function enterGuardianMode(email: string, password: string): Promis
   if (!token) return 'Entre primeiro com o seu PIN.';
   const r = await call<{ modeToken: string }>('/guardian-mode/enter', { email, password }, token);
   return r.ok ? null : r.message;
+}
+
+const GUARDIAN_KEY = 'tata.guardianToken';
+export const getGuardianToken = () => AsyncStorage.getItem(GUARDIAN_KEY);
+
+/** Login direto do responsável na API (painel dos pais), com a mesma conta do cadastro. Devolve o erro, se houver. */
+export async function guardianLogin(email: string, password: string): Promise<string | null> {
+  const r = await call<{ token: string }>('/guardian/login', { email, password });
+  if (!r.ok) return r.message;
+  await AsyncStorage.setItem(GUARDIAN_KEY, r.data.token);
+  return null;
+}
+
+export async function guardianLogout(): Promise<void> {
+  const token = await getGuardianToken();
+  if (token) await call('/guardian/logout', {}, token);
+  await AsyncStorage.removeItem(GUARDIAN_KEY);
 }
