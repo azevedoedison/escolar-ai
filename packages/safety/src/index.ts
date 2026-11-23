@@ -18,4 +18,7 @@ export type { ModelClient, ModelRequest } from './model';
 export { MAX_ANSWER_CHARS, OUTPUT_CATEGORIES, classifyOutput, parseOutputVerdict } from './output-classifier';
 export type { OutputCheckInput, OutputDecision, OutputVerdict } from './output-classifier';
 export { INPUT_CATEGORIES, classifyInput, parseInputVerdict } from './input-classifier';
-export type { InputCheckInput } from './input-classifier';
+export { INPUT_DECISIONS, INTENTS, RECENT_LIMIT, RISKS } from './input-classifier';
+export type { InputCheckInput, InputVerdict, Intent, RecentMessage, Risk } from './input-classifier';
+export { POLICY, policyPromptLines } from './policy';
+export type { CategoryPolicy, InputCategory, PolicyAction } from './policy';

@@ -9,5 +9,7 @@ export interface ModelRequest {
 }
 
 export interface ModelClient {
+  /** Identificador do modelo, gravado no safety_event. */
+  model?: string;
   complete(req: ModelRequest): Promise<string>;
 }

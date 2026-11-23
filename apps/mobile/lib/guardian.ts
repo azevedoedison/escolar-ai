@@ -3,6 +3,8 @@ import type { TimelineFilters, TimelinePage } from '@tata/shared';
 
 const BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const KEY = 'tata.guardianModeToken';
+/** Login direto do responsável (guardado por lib/api.ts). Vale mais que o do modo Responsável. */
+const LOGIN_KEY = 'tata.guardianToken';
 
 export interface GuardianChild {
   id: string;
@@ -18,12 +20,13 @@ export const saveGuardianModeToken = (token: string) => AsyncStorage.setItem(KEY
 export const clearGuardianModeToken = () => AsyncStorage.removeItem(KEY);
 
 async function get<T>(path: string): Promise<GuardianResult<T>> {
-  const token = await AsyncStorage.getItem(KEY);
+  const token = (await AsyncStorage.getItem(LOGIN_KEY)) ?? (await AsyncStorage.getItem(KEY));
   if (!token) return { ok: false, expired: true, message: 'Entre no modo Responsável de novo.' };
   try {
     const res = await fetch(`${BASE}${path}`, { headers: { authorization: `Bearer ${token}` } });
     if (res.status === 401) {
       await clearGuardianModeToken();
+      await AsyncStorage.removeItem(LOGIN_KEY);
       return { ok: false, expired: true, message: 'A sessão do modo Responsável acabou. Entre de novo.' };
     }
     if (!res.ok) return { ok: false, expired: false, message: 'Não foi possível carregar. Tente de novo.' };

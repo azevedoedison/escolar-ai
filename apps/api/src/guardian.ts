@@ -1,4 +1,4 @@
-// Rotas do painel dos pais (M-30, M-31). Só o token do modo Responsável abre estas rotas, e a família
+// Rotas do painel dos pais (M-30, M-31). Só o responsável autenticado (login direto ou modo Responsável) abre estas rotas, e a família
 // vem sempre da sessão: um childId de outra família responde 404, igual a um que não existe.
 
 import { Hono, type Context } from 'hono';
@@ -8,7 +8,7 @@ import { isUuid, type GuardianStore } from './guardian-store';
 
 export interface GuardianDeps {
   store: GuardianStore;
-  auth: Pick<AuthStore, 'verifyGuardianMode'>;
+  auth: Pick<AuthStore, 'verifyGuardian'>;
 }
 
 export function createGuardianRoutes({ store, auth }: GuardianDeps) {
@@ -24,7 +24,7 @@ export function createGuardianRoutes({ store, auth }: GuardianDeps) {
   async function guardian(c: Context) {
     const h = c.req.header('authorization') ?? '';
     const token = h.startsWith('Bearer ') ? h.slice(7) : '';
-    return token ? auth.verifyGuardianMode(token) : null;
+    return token ? auth.verifyGuardian(token) : null;
   }
 
   app.get('/guardian/children', async (c) => {

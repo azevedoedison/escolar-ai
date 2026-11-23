@@ -20,8 +20,8 @@ function setup(over: Partial<GuardianStore> = {}) {
     timeline: vi.fn(async (fam, id) => (fam === FAM && id === CHILD ? page : null)),
     ...over,
   };
-  const verifyGuardianMode = vi.fn(async (t: string) => (t === 'mt' ? { guardianId: 'g1', familyId: FAM } : null));
-  const app = createApp(undefined, undefined, { store, auth: { verifyGuardianMode } });
+  const verifyGuardian = vi.fn(async (t: string) => (t === 'mt' ? { guardianId: 'g1', familyId: FAM } : null));
+  const app = createApp(undefined, undefined, { store, auth: { verifyGuardian } });
   return { app, store };
 }
 const get = (app: ReturnType<typeof setup>['app'], path: string, token: string | null = 'mt') =>

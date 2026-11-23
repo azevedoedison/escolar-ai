@@ -66,6 +66,18 @@ describe('createPgStore', () => {
     const ev = await pool.query(`select layer, decision from safety_event where message_id = $1`, [m1]);
     expect(ev.rows).toEqual([{ layer: 'input', decision: 'allow' }]);
   });
+  it('grava intenção, risco, modelo e a decisão "care"', async () => {
+    const conv = await store.createConversation(childA, 'Puberdade');
+    const m = await store.addMessage(conv, 'child', 'o que é puberdade?');
+    await store.addSafetyEvent({
+      messageId: m, layer: 'input', category: 'sexualidade', decision: 'care',
+      intent: 'curiosidade', risk: 'baixo', model: 'haiku', latencyMs: 80,
+    });
+    const ev = await pool.query(`select category, intent, risk, decision, model, latency_ms from safety_event where message_id = $1`, [m]);
+    expect(ev.rows).toEqual([
+      { category: 'sexualidade', intent: 'curiosidade', risk: 'baixo', decision: 'care', model: 'haiku', latency_ms: 80 },
+    ]);
+  });
   it('history respeita o limite pegando as mais recentes', async () => {
     const conv = await store.createConversation(childA, 'Limite');
     for (let i = 1; i <= 5; i++) await store.addMessage(conv, 'child', `m${i}`);
