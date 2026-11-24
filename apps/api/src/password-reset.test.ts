@@ -96,7 +96,7 @@ describe('fluxo completo do responsável', () => {
     const weak = await post('/guardian/password/reset', { token, password: 'curta' });
     expect(await weak.json()).toMatchObject({ error: 'weak' });
     expect((await post('/guardian/password/reset', { token, password: 'senhaNova456' })).status).toBe(200);
-    expect((await post('/guardian/password/reset', { token, password: 'outraSenha789' })).status).toBe(400);
+    expect((await post('/guardian/password/reset', { token, password: 'outra senha de teste' })).status).toBe(400);
 
     expect((await pool.query(`select * from public.verify_guardian_session($1)`, [session])).rowCount).toBe(0);
     expect((await post('/guardian/login', { email: EMAIL, password: 'senhaAntiga123' })).status).toBe(401);

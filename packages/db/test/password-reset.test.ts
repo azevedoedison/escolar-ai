@@ -135,7 +135,7 @@ describe('recuperação de senha', () => {
     expect(Number(exp)).toBeGreaterThan(59 * 60);
     expect(Number(exp)).toBeLessThanOrEqual(3600);
     expect(await reset(token, 'senhaNovaForte1')).toBe('ok');
-    expect(await reset(token, 'outraSenhaForte2')).toBe('invalid');
+    expect(await reset(token, 'outra senha de teste')).toBe('invalid');
     expect((await login(emailA, SENHA)).status).toBe('invalid');
     expect((await login(emailA, 'senhaNovaForte1')).status).toBe('ok');
     const a = await actions();
