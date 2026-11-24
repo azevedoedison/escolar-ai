@@ -51,7 +51,7 @@ beforeAll(async () => {
   }
   await pool.query(`insert into auth.users(id,email,encrypted_password) values ($1,'pai@exemplo.com', crypt('senhaDoPai123', gen_salt('bf')))`, [guardianUser]);
   familyId = (await pool.query(`insert into family default values returning id`)).rows[0].id;
-  await pool.query(`insert into guardian(family_id, auth_user_id, name, email) values ($1,$2,'Pai','pai@exemplo.com')`, [familyId, guardianUser]);
+  await pool.query(`insert into guardian(family_id, auth_user_id, name, email, email_confirmed_at) values ($1,$2,'Pai','pai@exemplo.com', now())`, [familyId, guardianUser]);
   const year = new Date().getFullYear();
   childId = (await pool.query(
     `insert into child(family_id, nickname, birth_year, pin_hash) values ($1,'Ana',$2, crypt('1234', gen_salt('bf'))) returning id`,

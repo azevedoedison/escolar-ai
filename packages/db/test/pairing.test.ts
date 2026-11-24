@@ -46,6 +46,8 @@ beforeAll(async () => {
     [uA, uB],
   );
   for (const u of [uA, uB]) await commitAs(u, (c) => c.query(`select public.register_guardian('Resp', true, 'v1')`));
+  // O login exige e-mail confirmado (change recuperacao-de-senha-e-confirmacao).
+  await db.admin.query(`update guardian set email_confirmed_at = now()`);
   childA = await commitAs(uA, async (c) => (await c.query(`select public.create_child('Tati',$1,'6º ano','raposa','123456') as id`, [year - 11])).rows[0].id);
   childB = await commitAs(uB, async (c) => (await c.query(`select public.create_child('Beto',$1,'5º ano','gato','654321') as id`, [year - 10])).rows[0].id);
 });

@@ -1,6 +1,9 @@
 import pg from 'pg';
 
-export type Status = 'ok' | 'invalid' | 'locked' | 'revoked' | 'unauthorized';
+export type Status = 'ok' | 'invalid' | 'locked' | 'revoked' | 'unauthorized' | 'unconfirmed';
+
+/** Link de uso único: confirmar e-mail ou redefinir senha. `weak` = senha nova curta (o link continua valendo). */
+export type LinkStatus = 'ok' | 'invalid' | 'locked' | 'weak';
 
 export interface AuthStore {
   redeemPairingCode(code: string, platform: string, origin: string, label: string | null): Promise<{ status: Status; deviceId?: string; childId?: string; deviceToken?: string }>;
@@ -16,6 +19,12 @@ export interface AuthStore {
   /** Responsável por login direto OU por modo Responsável: o painel aceita os dois. */
   verifyGuardian(token: string): Promise<{ guardianId: string; familyId: string } | null>;
   guardianLogout(token: string): Promise<void>;
+  /** Gera o link de confirmação. null = nada a enviar (sem conta, já confirmada ou limite de pedidos). */
+  requestEmailConfirmation(email: string, origin: string): Promise<{ token: string; name: string } | null>;
+  confirmEmail(token: string, origin: string): Promise<LinkStatus>;
+  /** Gera o link de redefinição. null = nada a enviar (sem conta ou limite de pedidos). */
+  requestPasswordReset(email: string, origin: string): Promise<{ token: string; name: string } | null>;
+  resetPassword(token: string, password: string, origin: string): Promise<LinkStatus>;
 }
 
 /** Implementação sobre as funções SQL da migração de pareamento. Toda regra e todo contador ficam no banco. */
@@ -63,6 +72,22 @@ export function createPairingStore(pool: pg.Pool): AuthStore {
     },
     async guardianLogout(token) {
       await q('select public.guardian_logout($1)', [token]);
+    },
+    async requestEmailConfirmation(email, origin) {
+      const [r] = await q('select * from public.guardian_confirm_request($1,$2)', [email, origin]);
+      return r ? { token: r.token, name: r.guardian_name } : null;
+    },
+    async confirmEmail(token, origin) {
+      const [r] = await q('select public.guardian_confirm_email($1,$2) as s', [token, origin]);
+      return r.s;
+    },
+    async requestPasswordReset(email, origin) {
+      const [r] = await q('select * from public.guardian_password_reset_request($1,$2)', [email, origin]);
+      return r ? { token: r.token, name: r.guardian_name } : null;
+    },
+    async resetPassword(token, password, origin) {
+      const [r] = await q('select public.guardian_password_reset($1,$2,$3) as s', [token, password, origin]);
+      return r.s;
     },
   };
 }

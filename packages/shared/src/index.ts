@@ -6,3 +6,4 @@ export * from './signup';
 export * from './child';
 export * from './pairing';
 export * from './chat';
+export * from './recovery';

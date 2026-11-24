@@ -3,6 +3,7 @@ import { isPairingCode, parseChildLogin, PLATFORMS, type Platform } from '@tata/
 import { signToken } from './auth';
 import { createChatRoutes, type ChatDeps } from './chat';
 import type { GoogleAuth } from './google';
+import { buildEmail, createConsoleMailer, type EmailKind, type Mailer } from './mailer';
 import type { AuthStore, Status } from './pairing-store';
 
 /** Pareamento e login. `tokenSecret` é o mesmo do chat (CHILD_TOKEN_SECRET). */
@@ -11,6 +12,10 @@ export interface AuthDeps {
   tokenSecret: string;
   /** Login com Google. Ausente: o botão fica desligado e a rota responde 404. */
   google?: GoogleAuth | null;
+  /** Envio de e-mail (confirmação e recuperação de senha). Ausente: versão simulada, que imprime o link no console. */
+  mailer?: Mailer;
+  /** Endereço onde o link do e-mail abre (APP_BASE_URL). */
+  appBaseUrl?: string;
   now?: () => number;
 }
 
@@ -21,12 +26,13 @@ const MESSAGES = {
   invalid: 'Dados incorretos. Confira e tente de novo.',
   locked: 'Muitas tentativas. Aguarde um pouco e tente de novo.',
   unauthorized: 'Sessão inválida. Entre de novo.',
+  unconfirmed: 'Confirme seu e-mail para entrar. Veja a mensagem que enviamos para você.',
   revoked: 'Este aparelho foi desconectado. Peça um novo código ao responsável.',
   bad_request: 'Pedido inválido.',
 } as const;
 
 function fail(c: Context, status: Exclude<Status, 'ok'> | 'bad_request') {
-  const http = status === 'bad_request' ? 400 : status === 'locked' ? 429 : 401;
+  const http = status === 'bad_request' ? 400 : status === 'locked' ? 429 : status === 'unconfirmed' ? 403 : 401;
   return c.json({ error: status, message: MESSAGES[status] }, http);
 }
 
@@ -46,8 +52,30 @@ async function json(c: Context): Promise<unknown> {
   }
 }
 
-export function createAuthRoutes({ store, tokenSecret, google = null, now = Date.now }: AuthDeps) {
+const LINK_MESSAGES = {
+  invalid: 'Este link não vale mais. Peça um novo.',
+  locked: MESSAGES.locked,
+  weak: 'A senha precisa ter ao menos 8 caracteres.',
+} as const;
+
+/** Resposta única dos pedidos de link: igual exista a conta ou não, para não revelar quais e-mails têm conta. */
+const REQUESTED = { message: 'Se o e-mail tiver uma conta, enviamos as instruções para ele.' };
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL = 254;
+
+export function createAuthRoutes({ store, tokenSecret, google = null, mailer = createConsoleMailer(), appBaseUrl = 'http://localhost:8081', now = Date.now }: AuthDeps) {
   const app = new Hono();
+
+  /** Envia o link. Falha de envio vai para o log (sem o link) e não muda a resposta ao cliente. */
+  async function deliver(kind: EmailKind, email: string, issued: { token: string; name: string } | null) {
+    if (!issued) return;
+    try {
+      await mailer.send({ to: email.trim(), ...buildEmail(kind, appBaseUrl, issued.token, issued.name) });
+    } catch (e) {
+      console.error(`Falha ao enviar e-mail de ${kind}:`, e instanceof Error ? e.message : 'erro desconhecido');
+    }
+  }
 
   /** Emite o token assinado do chat a partir de uma sessão opaca ainda válida. */
   async function chatToken(sessionToken: string) {
@@ -141,6 +169,41 @@ export function createAuthRoutes({ store, tokenSecret, google = null, now = Date
     const token = bearer(c);
     if (token) await store.guardianLogout(token);
     return c.body(null, 204);
+  });
+
+  // Confirmação de cadastro: o link do e-mail traz o token. Link usado, vencido ou inventado dá a mesma resposta.
+  app.post('/guardian/email/confirm', async (c) => {
+    const b = (await json(c)) as { token?: unknown } | null;
+    if (!b || typeof b.token !== 'string' || b.token.length === 0 || b.token.length > 200) return fail(c, 'bad_request');
+    const r = await store.confirmEmail(b.token, origin(c));
+    if (r !== 'ok') return c.json({ error: r, message: LINK_MESSAGES[r] }, r === 'locked' ? 429 : 400);
+    return c.json({ confirmed: true });
+  });
+
+  app.post('/guardian/email/resend', async (c) => {
+    const b = (await json(c)) as { email?: unknown } | null;
+    if (!b || typeof b.email !== 'string' || b.email.length > MAX_EMAIL || !EMAIL.test(b.email.trim())) return fail(c, 'bad_request');
+    // O envio não é esperado: o tempo da resposta não deve revelar se a conta existe.
+    void deliver('confirm', b.email, await store.requestEmailConfirmation(b.email, origin(c)));
+    return c.json(REQUESTED, 202);
+  });
+
+  // "Esqueci a senha": resposta sempre igual, com ou sem conta, com ou sem limite estourado.
+  app.post('/guardian/password/forgot', async (c) => {
+    const b = (await json(c)) as { email?: unknown } | null;
+    if (!b || typeof b.email !== 'string' || b.email.length > MAX_EMAIL || !EMAIL.test(b.email.trim())) return fail(c, 'bad_request');
+    void deliver('reset', b.email, await store.requestPasswordReset(b.email, origin(c)));
+    return c.json(REQUESTED, 202);
+  });
+
+  app.post('/guardian/password/reset', async (c) => {
+    const b = (await json(c)) as { token?: unknown; password?: unknown } | null;
+    if (!b || typeof b.token !== 'string' || typeof b.password !== 'string' || b.token.length === 0 || b.token.length > 200 || b.password.length > 200) {
+      return fail(c, 'bad_request');
+    }
+    const r = await store.resetPassword(b.token, b.password, origin(c));
+    if (r !== 'ok') return c.json({ error: r, message: LINK_MESSAGES[r] }, r === 'locked' ? 429 : 400);
+    return c.json({ reset: true });
   });
 
   app.post('/guardian-mode/exit', async (c) => {
