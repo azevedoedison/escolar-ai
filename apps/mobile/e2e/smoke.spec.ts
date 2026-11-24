@@ -23,6 +23,6 @@ test('login com dados falsos mostra erro e navega entre telas', async ({ page })
   await expect(page.getByText('E-mail ou senha incorretos.')).toBeVisible();
   await page.getByText('Criar conta', { exact: true }).click();
   await expect(page).toHaveURL(/signup/);
-  await page.getByText('Voltar ao início').click();
+  await page.locator('a:visible', { hasText: 'Voltar ao início' }).click();
   await expect(page).toHaveURL(/\/$/);
 });
