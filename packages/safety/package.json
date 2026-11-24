@@ -8,8 +8,16 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "eval": "tsx eval/cli.ts",
+    "eval:real": "tsx eval/cli.ts --modelo=real"
   },
-  "dependencies": { "@tata/shared": "workspace:*" },
-  "devDependencies": { "vitest": "^3.2.4" }
+  "dependencies": {
+    "@tata/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "vitest": "^3.2.4"
+  }
 }
