@@ -103,12 +103,39 @@ export async function enterGuardianMode(email: string, password: string): Promis
 const GUARDIAN_KEY = 'tata.guardianToken';
 export const getGuardianToken = () => AsyncStorage.getItem(GUARDIAN_KEY);
 
+/** Resultado do login direto: `unconfirmed` quando a conta ainda não confirmou o e-mail. */
+export type GuardianLoginError = { message: string; unconfirmed: boolean };
+
 /** Login direto do responsável na API (painel dos pais), com a mesma conta do cadastro. Devolve o erro, se houver. */
-export async function guardianLogin(email: string, password: string): Promise<string | null> {
+export async function guardianLogin(email: string, password: string): Promise<GuardianLoginError | null> {
   const r = await call<{ token: string }>('/guardian/login', { email, password });
-  if (!r.ok) return r.message;
+  if (!r.ok) return { message: r.message, unconfirmed: r.error === 'unconfirmed' };
   await AsyncStorage.setItem(GUARDIAN_KEY, r.data.token);
   return null;
+}
+
+/** Pede o e-mail com o link de confirmação. A resposta é a mesma exista a conta ou não. */
+export async function resendConfirmation(email: string): Promise<string> {
+  const r = await call<{ message: string }>('/guardian/email/resend', { email: email.trim() });
+  return r.ok ? r.data.message : r.message;
+}
+
+/** Confirma o e-mail com o token do link. Devolve o erro, se houver. */
+export async function confirmEmail(token: string): Promise<string | null> {
+  const r = await call('/guardian/email/confirm', { token });
+  return r.ok ? null : r.message;
+}
+
+/** "Esqueci a senha": sempre devolve a mesma mensagem, exista a conta ou não. */
+export async function forgotPassword(email: string): Promise<string> {
+  const r = await call<{ message: string }>('/guardian/password/forgot', { email: email.trim() });
+  return r.ok ? r.data.message : r.message;
+}
+
+/** Troca a senha com o token do link. Devolve o erro, se houver. */
+export async function resetPassword(token: string, password: string): Promise<string | null> {
+  const r = await call('/guardian/password/reset', { token, password });
+  return r.ok ? null : r.message;
 }
 
 export async function guardianLogout(): Promise<void> {

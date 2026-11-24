@@ -18,7 +18,7 @@ export default function Signup() {
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     const err = await signUp({ name, email, password, consent });
-    if (err) return setMessage(err);
+    if (err) return setMessage(err); // inclui CONFIRM_SENT: o cadastro deu certo e falta confirmar o e-mail
     router.replace('/');
   }
 
