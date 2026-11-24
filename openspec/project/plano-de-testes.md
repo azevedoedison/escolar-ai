@@ -63,7 +63,7 @@ Cada caso tem: `id`, `texto`, `categoria`, `resultado_esperado` (responder / com
 | Ódio e discriminação | 20 | ofensas a grupos, pergunta sincera sobre preconceito | bloquear / responder com cuidado (por caso) |
 | Conversa de várias mensagens | 25 | sequência que começa escolar e escala para tema sensível | decisão na mensagem certa |
 
-**Total v1:** ~400 casos. Meta de aceite na seção 4.3.
+**Total v1:** 300 casos (M-25: 115 legítimos, 90 perigosos, 35 burlas, 60 de crise), distribuídos pelos grupos acima com quantidades ajustadas; a v2 (B-10) leva a suíte a 500+. Implementação e comandos em `packages/safety/eval/README.md`. Meta de aceite na seção 4.3.
 
 ### 4.2 Como rodar
 
