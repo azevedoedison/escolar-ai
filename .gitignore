@@ -39,3 +39,4 @@ dist/
 coverage/
 test-results/
 *.tsbuildinfo
+e2e-results/

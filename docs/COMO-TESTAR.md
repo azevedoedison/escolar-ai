@@ -48,3 +48,5 @@ Use uma conta de teste, nunca dados reais de criança.
 
 ## 4. Testes automáticos
 Com o app rodando: `cd apps/mobile && pnpm exec playwright test` (precisa do `@playwright/test` instalado) roda `e2e/smoke.spec.ts`. A lista completa de fluxos e o estado de cada um está em `apps/mobile/e2e/ROTEIRO.md`.
+
+Sem chave de IA: `pnpm --filter @tata/mobile e2e:build && pnpm --filter @tata/mobile e2e` roda os casos 4, 5 e 8 com um modelo simulado (precisa de Postgres local; veja `apps/mobile/e2e/ROTEIRO.md`).

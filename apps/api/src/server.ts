@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import pg from 'pg';
 import { createApp } from './app';
+import { createMockModel } from './mock-model';
 import { createOpenRouter } from './openrouter';
 import { createPgStore } from './store';
 import { createGoogleAuth, googleConfigFromEnv } from './google';
@@ -16,7 +17,11 @@ function need(name: string): string {
   return v;
 }
 
-const model = createOpenRouter({ apiKey: need('OPENROUTER_API_KEY'), model: process.env.TATA_MODEL });
+// TATA_MODEL_MOCK=1 troca o provedor por um modelo simulado (testes e2e, sem chave). Nunca em produção.
+const useMock = process.env.TATA_MODEL_MOCK === '1';
+if (useMock && process.env.NODE_ENV === 'production') throw new Error('TATA_MODEL_MOCK não pode ser usado em produção.');
+if (useMock) console.warn('Modelo SIMULADO ligado (TATA_MODEL_MOCK=1): as respostas não vêm de uma IA real.');
+const model = useMock ? createMockModel() : createOpenRouter({ apiKey: need('OPENROUTER_API_KEY'), model: process.env.TATA_MODEL });
 const googleCfg = googleConfigFromEnv(process.env);
 const pool = new pg.Pool({ connectionString: need('DATABASE_URL') });
 const app = createApp(
