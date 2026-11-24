@@ -11,15 +11,16 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.0",
+    "@tata/safety": "workspace:*",
     "@tata/shared": "workspace:*",
     "hono": "^4.13.0",
-    "@tata/safety": "workspace:*",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.0",
     "tsx": "^4.20.0",
-    "vitest": "^3.2.4",
-    "@types/pg": "^8.15.0"
+    "vitest": "^3.2.4"
   }
 }

@@ -4,6 +4,7 @@ import { signToken } from './auth';
 import { createChatRoutes, type ChatDeps } from './chat';
 import type { GoogleAuth } from './google';
 import type { AuthStore, Status } from './pairing-store';
+import { applyHttp, type HttpOptions } from './http';
 
 /** Pareamento e login. `tokenSecret` é o mesmo do chat (CHILD_TOKEN_SECRET). */
 export interface AuthDeps {
@@ -152,8 +153,9 @@ export function createAuthRoutes({ store, tokenSecret, google = null, now = Date
   return app;
 }
 
-export function createApp(chat?: ChatDeps, auth?: AuthDeps) {
+export function createApp(chat?: ChatDeps, auth?: AuthDeps, http?: HttpOptions) {
   const app = new Hono();
+  applyHttp(app, { log: () => {}, ...http });
   app.get('/health', (c) => c.json({ status: 'ok' }));
   if (chat) app.route('/', createChatRoutes(chat));
   if (auth) app.route('/', createAuthRoutes(auth));
